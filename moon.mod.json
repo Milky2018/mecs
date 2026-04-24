@@ -2,8 +2,8 @@
   "name": "username/mecs",
   "version": "0.1.0",
   "readme": "README.mbt.md",
-  "repository": "",
+  "repository": "https://github.com/Milky2018/mecs.git",
   "license": "Apache-2.0",
-  "keywords": [],
-  "description": ""
+  "keywords": ["ECS", "game"],
+  "description": "An experimental ECS library in MoonBit. "
 }
