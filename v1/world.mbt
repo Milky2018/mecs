@@ -3,11 +3,17 @@ struct World {
   mut entity_id_gen : EntityId
   entities : @set.Set[EntityId]
   component_storages : Map[ComponentId, ComponentStorage]
+  systems : Array[System]
 }
 
 ///|
 pub fn World::World() -> World {
-  { entity_id_gen: 0, entities: @set.Set::new(), component_storages: {} }
+  {
+    entity_id_gen: 0,
+    entities: @set.Set::new(),
+    component_storages: {},
+    systems: [],
+  }
 }
 
 ///|
@@ -35,6 +41,23 @@ pub fn World::entity_ops(self : Self, ent : EntityId) -> EntityOps {
 }
 
 ///|
-// pub fn[A : Querable] World::query(self : Self) -> Query[A] {
-//   Query(() => self.component_storages)
-// }
+pub fn[A : Querable] World::query(self : Self) -> Iter[A] {
+  A::iter(self)
+}
+
+///|
+pub fn[C : Component] World::query1(self : Self) -> Iter[C] {
+  let storage = self.component_storages[C::component_id()]
+  storage.values()
+}
+
+///|
+pub fn World::add_system(self : Self, system : System) -> Unit {
+  self.systems.push(system)
+}
+
+pub fn World::step(self : Self) -> Unit {
+  for system in self.systems {
+    (system.func)(self)
+  }
+}

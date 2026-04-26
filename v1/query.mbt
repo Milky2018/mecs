@@ -1,20 +1,13 @@
-// trait Querable {
+///|
+pub(open) trait Querable {
+  iter(world : World) -> Iter[Self]
+}
 
-// }
+///|
+pub impl[A : Component, B : Component] Querable for (A, B) with iter(world : World) {
+  let storage_a = world.component_storages[A::component_id()]
+  let storage_b = world.component_storages[B::component_id()]
+  storage_a.values().zip(storage_b.values())
+}
 
-// ///|
-// struct Query[A] {
-//   get_storages : () -> Map[ComponentId, ComponentStorage]
-// }
 
-// ///|
-// pub fn[A] Query::Query(
-//   get_storages : () -> Map[ComponentId, ComponentStorage],
-// ) -> Query[A] {
-//   Query::{ get_storages, }
-// }
-
-// ///|
-// pub fn[A] Query::iter(self : Self[A]) -> Iter[A] {
-
-// }
