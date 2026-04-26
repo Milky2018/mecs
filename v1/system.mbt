@@ -1,0 +1,4 @@
+struct System {
+  name : String 
+  
+}

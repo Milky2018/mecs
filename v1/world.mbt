@@ -1,7 +1,7 @@
 ///|
 struct World {
-  mut entity_id_gen : UInt
-  entities : @set.Set[Bool]
+  mut entity_id_gen : EntityId
+  entities : @set.Set[EntityId]
   component_storages : Map[ComponentId, ComponentStorage]
 }
 
@@ -24,7 +24,7 @@ pub fn[C : Component] World::assign_component(
   ent : EntityId,
   comp : C,
 ) -> Unit {
-  let comp_name = C::debug_name()
+  let comp_name = C::component_id()
   let storage = self.component_storages[comp_name]
   storage.set(ent, comp)
 }
@@ -34,6 +34,7 @@ pub fn World::entity_ops(self : Self, ent : EntityId) -> EntityOps {
   EntityOps(() => self.component_storages, ent)
 }
 
-pub fn[A] World::query1(self : Self) -> Query1[A] {
-
-}
+///|
+// pub fn[A : Querable] World::query(self : Self) -> Query[A] {
+//   Query(() => self.component_storages)
+// }

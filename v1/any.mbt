@@ -1,15 +1,16 @@
 ///|
-priv type Any
+type Any
 
 ///|
 fn[A, B] coe(a : A) -> B = "%identity"
 
 ///|
-fn[K : Eq + Hash, V] save_any(store : Map[K, Any], k : K, v : V) -> Unit {
-  store[k] = coe(v)
+pub fn[A] unsafe_to_any(a : A) -> Any {
+  coe(a)
 }
 
 ///|
-fn[K : Eq + Hash, V] load_any(store : Map[K, Any], k : K) -> V {
-  store[k] |> coe
+pub fn[A] unsafe_from_any(a : Any) -> A {
+  coe(a)
 }
+

@@ -18,6 +18,6 @@ pub fn[C : Component] EntityOps::insert_component(
   comp : C,
 ) -> Unit {
   let storages = (self.get_storages)()
-  let storage = storages[C::debug_name()]
+  let storage = storages[C::component_id()]
   storage.set(self.entity, comp) 
 }

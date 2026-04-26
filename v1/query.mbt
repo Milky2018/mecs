@@ -1,17 +1,20 @@
-///|
-struct Query1[A] {
-  iter : () -> A?
-}
+// trait Querable {
 
-///|
-pub fn[A] Query1::Query1(iter : () -> A?) -> Query1[A] {
-  Query1::{ iter, }
-}
+// }
 
-///|
-pub fn[A] Query1::iter() -> Iter[A] {
-  Iter::new(self.iter)
-}
+// ///|
+// struct Query[A] {
+//   get_storages : () -> Map[ComponentId, ComponentStorage]
+// }
 
-///|
-struct Query2[A, B] {}
+// ///|
+// pub fn[A] Query::Query(
+//   get_storages : () -> Map[ComponentId, ComponentStorage],
+// ) -> Query[A] {
+//   Query::{ get_storages, }
+// }
+
+// ///|
+// pub fn[A] Query::iter(self : Self[A]) -> Iter[A] {
+
+// }

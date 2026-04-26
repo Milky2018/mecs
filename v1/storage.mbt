@@ -1,21 +1,24 @@
-
 ///|
 struct ComponentStorage {
   map : Map[EntityId, ComponentRaw]
 }
 
+///|
 pub fn ComponentStorage::ComponentStorage() -> Self {
-  ComponentStorage::{
-    map: {}
-  }
+  ComponentStorage::{ map: {} }
 }
 
+///|
 pub fn[C] ComponentStorage::set(self : Self, ent : EntityId, comp : C) -> Unit {
-  save_any(self.map, ent, comp)
+  self.map[ent] = unsafe_to_any(comp)
 }
 
+///|
 pub fn[C] ComponentStorage::get(self : Self, ent : EntityId) -> C {
-  load_any(self.map, ent)
+  self.map[ent] |> unsafe_from_any
 }
 
-
+///|
+pub fn[C] ComponentStorage::values(self : Self) -> Iter[C] {
+  self.map.values().map(coe)
+}
