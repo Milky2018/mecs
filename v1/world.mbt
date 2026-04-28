@@ -4,6 +4,7 @@ struct World {
   entities : @set.Set[EntityId]
   component_storages : Map[ComponentId, ComponentStorage]
   systems : Array[System]
+  resources : ResourceStorage
 }
 
 ///|
@@ -13,6 +14,7 @@ pub fn World::World() -> World {
     entities: @set.Set::new(),
     component_storages: {},
     systems: [],
+    resources: ResourceStorage(),
   }
 }
 
@@ -61,4 +63,13 @@ pub fn World::step(self : Self) -> Unit {
   for system in self.systems {
     (system.func)(self)
   }
+}
+
+///|
+pub fn[R : Resource] World::set_resource(self : Self, r : R) -> Unit {
+  self.resources.set(r)
+}
+
+pub fn[R : Resource] World::get_resource(self : Self) -> R {
+  self.resources.get()
 }

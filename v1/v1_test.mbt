@@ -43,19 +43,29 @@ fn move_system(world : World) -> Unit {
 }
 
 ///|
-let global_log : Array[String] = []
+priv struct GlobalLog {
+  content : Array[String]
+}
+
+///|
+impl HasTypeId for GlobalLog
+
+///|
+impl Resource for GlobalLog
 
 ///|
 fn print_system(world : World) -> Unit {
   let query : Iter[Position] = world.query1()
+  let log : GlobalLog = world.get_resource()
   for pos in query {
-    global_log.push("{ x : \{pos.x}, y : \{pos.y} }")
+    log.content.push("{ x : \{pos.x}, y : \{pos.y} }")
   }
 }
 
 ///|
 test "dynamic insert component" {
   let world = @v1.World()
+  world.set_resource(GlobalLog::{ content: [] })
   let ent = world.spawn_entity()
   world
   .entity_ops(ent)
@@ -66,14 +76,14 @@ test "dynamic insert component" {
   |> ignore
   world.step()
   inspect(
-    global_log,
+    (world.get_resource() : GlobalLog).content,
     content=(
       #|["{ x : 1, y : -1 }"]
     ),
   )
   world.step()
   inspect(
-    global_log,
+    (world.get_resource() : GlobalLog).content,
     content=(
       #|["{ x : 1, y : -1 }", "{ x : 2, y : -2 }"]
     ),
