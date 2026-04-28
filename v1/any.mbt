@@ -15,4 +15,5 @@ pub fn[A] unsafe_from_any(a : Any) -> A {
   r.val
 }
 
+///|
 pub fn[A] any_to_string(x : A) -> String = "%any.to_string"

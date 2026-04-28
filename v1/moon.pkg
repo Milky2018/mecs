@@ -1,5 +1,5 @@
 import {
-  "moonbitlang/core/set"
+  "moonbitlang/core/set",
 }
 
 supported_targets = "all-wasm-gc"

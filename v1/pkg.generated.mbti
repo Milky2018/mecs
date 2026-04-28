@@ -2,6 +2,8 @@
 package "Milky2018/mecs/v1"
 
 // Values
+pub fn[A] any_to_string(A) -> String
+
 pub fn[A] unsafe_from_any(Any) -> A
 
 pub fn[A] unsafe_to_any(A) -> Any
@@ -25,6 +27,13 @@ pub struct EntityOps {
 pub fn EntityOps::EntityOps(() -> Map[String, ComponentStorage], UInt) -> Self
 pub fn[C : Component] EntityOps::insert_component(Self, C) -> Unit
 
+pub struct ResourceStorage {
+  // private fields
+}
+pub fn ResourceStorage::ResourceStorage() -> Self
+pub fn[R : Resource] ResourceStorage::get(Self) -> R
+pub fn[R : Resource] ResourceStorage::set(Self, R) -> Unit
+
 pub struct System {
   name : String
   func : (World) -> Unit
@@ -38,8 +47,10 @@ pub fn World::World() -> Self
 pub fn World::add_system(Self, System) -> Unit
 pub fn[C : Component] World::assign_component(Self, UInt, C) -> Unit
 pub fn World::entity_ops(Self, UInt) -> EntityOps
+pub fn[R : Resource] World::get_resource(Self) -> R
 pub fn[A : Querable] World::query(Self) -> Iter[A]
 pub fn[C : Component] World::query1(Self) -> Iter[C]
+pub fn[R : Resource] World::set_resource(Self, R) -> Unit
 pub fn World::spawn_entity(Self) -> UInt
 pub fn World::step(Self) -> Unit
 
@@ -49,12 +60,18 @@ pub type ComponentId = String
 pub type EntityId = UInt
 
 // Traits
-pub(open) trait Component {
-  component_id() -> String
+pub(open) trait Component : HasTypeId {
+}
+
+pub(open) trait HasTypeId {
+  type_id() -> String = _
 }
 
 pub(open) trait Querable {
   iter(World) -> Iter[Self]
 }
 pub impl[A : Component, B : Component] Querable for (A, B)
+
+pub(open) trait Resource : HasTypeId {
+}
 

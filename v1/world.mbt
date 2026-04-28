@@ -70,6 +70,7 @@ pub fn[R : Resource] World::set_resource(self : Self, r : R) -> Unit {
   self.resources.set(r)
 }
 
+///|
 pub fn[R : Resource] World::get_resource(self : Self) -> R {
   self.resources.get()
 }
