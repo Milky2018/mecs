@@ -27,3 +27,17 @@ test "component storage get/set" {
     ),
   )
 }
+
+///|
+test "component storage values" {
+  let store = @v1.ComponentStorage()
+  store.set(1, "Hello")
+  store.set(2, "World")
+  let values : Array[String] = store.values().to_array()
+  inspect(
+    values,
+    content=(
+      #|["Hello", "World"]
+    ),
+  )
+}

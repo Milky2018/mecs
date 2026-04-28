@@ -30,7 +30,7 @@ pub fn[C : Component] World::assign_component(
   ent : EntityId,
   comp : C,
 ) -> Unit {
-  let comp_name = C::component_id()
+  let comp_name = C::type_id()
   let storage = self.component_storages[comp_name]
   storage.set(ent, comp)
 }
@@ -47,7 +47,7 @@ pub fn[A : Querable] World::query(self : Self) -> Iter[A] {
 
 ///|
 pub fn[C : Component] World::query1(self : Self) -> Iter[C] {
-  let storage = self.component_storages[C::component_id()]
+  let storage = self.component_storages[C::type_id()]
   storage.values()
 }
 
@@ -56,6 +56,7 @@ pub fn World::add_system(self : Self, system : System) -> Unit {
   self.systems.push(system)
 }
 
+///|
 pub fn World::step(self : Self) -> Unit {
   for system in self.systems {
     (system.func)(self)

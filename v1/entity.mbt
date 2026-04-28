@@ -1,3 +1,2 @@
-
 ///|
 pub type EntityId = UInt

@@ -5,9 +5,10 @@ priv struct Position {
 }
 
 ///|
-impl @v1.Component for Position with component_id() {
-  "position"
-}
+impl HasTypeId for Position
+
+///|
+impl Component for Position
 
 ///|
 priv struct Velocity {
@@ -16,9 +17,10 @@ priv struct Velocity {
 }
 
 ///|
-impl @v1.Component for Velocity with component_id() {
-  "velocity"
-}
+impl HasTypeId for Velocity
+
+///|
+impl Component for Velocity
 
 ///|
 // struct Name {
@@ -47,7 +49,7 @@ let global_log : Array[String] = []
 fn print_system(world : World) -> Unit {
   let query : Iter[Position] = world.query1()
   for pos in query {
-    global_log.push("x : \{pos.x}, y : \{pos.y}")
+    global_log.push("{ x : \{pos.x}, y : \{pos.y} }")
   }
 }
 
@@ -63,7 +65,17 @@ test "dynamic insert component" {
   world..add_system(System(move_system))..add_system(System(print_system))
   |> ignore
   world.step()
-  inspect(global_log)
+  inspect(
+    global_log,
+    content=(
+      #|["{ x : 1, y : -1 }"]
+    ),
+  )
   world.step()
-  inspect(global_log)
+  inspect(
+    global_log,
+    content=(
+      #|["{ x : 1, y : -1 }", "{ x : 2, y : -2 }"]
+    ),
+  )
 }
