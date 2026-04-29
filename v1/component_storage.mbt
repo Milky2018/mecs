@@ -23,3 +23,8 @@ pub fn[C] ComponentStorage::get(self : Self, ent : EntityId) -> C {
 pub fn[C] ComponentStorage::values(self : Self) -> Iter[C] {
   self.map.values().map(unsafe_from_any)
 }
+
+///|
+pub fn[C] ComponentStorage::iter2(self : Self) -> Iter2[EntityId, C] {
+  self.map.map(fn(_k, v) { coe(v) }).iter2()
+}

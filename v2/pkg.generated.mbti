@@ -1,0 +1,74 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mecs/v2"
+
+// Values
+pub fn[C] component_store() -> ComponentStore[C]
+
+pub fn[C] query1(ComponentStore[C]) -> Iter[C]
+
+pub fn[C] query1_entities(ComponentStore[C]) -> Iter[(UInt, C)]
+
+pub fn[A, B] query2(ComponentStore[A], ComponentStore[B]) -> Iter[(A, B)]
+
+pub fn[A, B] query2_entities(ComponentStore[A], ComponentStore[B]) -> Iter[(UInt, A, B)]
+
+pub fn[A, B, C] query3(ComponentStore[A], ComponentStore[B], ComponentStore[C]) -> Iter[(A, B, C)]
+
+pub fn[A, B, C] query3_entities(ComponentStore[A], ComponentStore[B], ComponentStore[C]) -> Iter[(UInt, A, B, C)]
+
+pub fn[T] resource() -> Resource[T]
+
+// Errors
+
+// Types and methods
+pub struct ComponentStore[C] {
+  // private fields
+}
+pub fn[C] ComponentStore::ComponentStore() -> Self[C]
+pub fn[C] ComponentStore::clear(Self[C]) -> Unit
+pub fn[C] ComponentStore::contains(Self[C], UInt) -> Bool
+pub fn[C] ComponentStore::get(Self[C], UInt) -> C?
+pub fn[C] ComponentStore::insert(Self[C], UInt, C) -> Unit
+pub fn[C] ComponentStore::is_empty(Self[C]) -> Bool
+pub fn[C] ComponentStore::iter_entities(Self[C]) -> Iter[(UInt, C)]
+pub fn[C] ComponentStore::length(Self[C]) -> Int
+pub fn[C] ComponentStore::remove(Self[C], UInt) -> Unit
+pub fn[C] ComponentStore::require(Self[C], UInt) -> C
+pub fn[C] ComponentStore::values(Self[C]) -> Iter[C]
+
+pub struct Resource[T] {
+  // private fields
+}
+pub fn[T] Resource::Resource() -> Self[T]
+pub fn[T] Resource::clear(Self[T]) -> Unit
+pub fn[T] Resource::get(Self[T]) -> T
+pub fn[T] Resource::is_set(Self[T]) -> Bool
+pub fn[T] Resource::set(Self[T], T) -> Unit
+pub fn[T] Resource::try_get(Self[T]) -> T?
+
+pub struct System {
+  name : String
+  func : (World) -> Unit
+}
+pub fn System::System((World) -> Unit, name? : String) -> Self
+
+pub struct World {
+  // private fields
+}
+pub fn World::World() -> Self
+pub fn World::add_system(Self, System) -> Unit
+pub fn World::add_system_fn(Self, (Self) -> Unit, name? : String) -> Unit
+pub fn World::despawn(Self, UInt) -> Bool
+pub fn[C] World::get_component(Self, UInt, ComponentStore[C]) -> C?
+pub fn[C] World::insert_component(Self, UInt, ComponentStore[C], C) -> Bool
+pub fn World::is_alive(Self, UInt) -> Bool
+pub fn[C] World::register_component_store(Self, ComponentStore[C]) -> Unit
+pub fn[C] World::remove_component(Self, UInt, ComponentStore[C]) -> Unit
+pub fn World::spawn(Self) -> UInt
+pub fn World::step(Self) -> Unit
+
+// Type aliases
+pub type EntityId = UInt
+
+// Traits
+

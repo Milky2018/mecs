@@ -18,6 +18,7 @@ pub struct ComponentStorage {
 }
 pub fn ComponentStorage::ComponentStorage() -> Self
 pub fn[C] ComponentStorage::get(Self, UInt) -> C
+pub fn[C] ComponentStorage::iter2(Self) -> Iter2[UInt, C]
 pub fn[C] ComponentStorage::set(Self, UInt, C) -> Unit
 pub fn[C] ComponentStorage::values(Self) -> Iter[C]
 
