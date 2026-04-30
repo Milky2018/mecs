@@ -1,0 +1,82 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mecs/v3"
+
+// Values
+
+// Errors
+
+// Types and methods
+type EntityOps
+pub fn EntityOps::despawn(Self) -> Bool
+pub fn[C : Component] EntityOps::insert_component(Self, C) -> Unit
+pub fn[C : Component] EntityOps::remove_component(Self) -> Unit
+
+pub struct System {
+  name : String
+  func : (World) -> Unit
+}
+pub fn System::System((World) -> Unit, name? : String) -> Self
+
+pub struct World {
+  // private fields
+}
+pub fn World::World() -> Self
+pub fn World::add_system(Self, System) -> Unit
+pub fn World::add_system_fn(Self, (Self) -> Unit, name? : String) -> Unit
+pub fn World::despawn(Self, UInt) -> Bool
+pub fn[A : Component, B : Component] World::each2(Self, (A, B) -> Unit) -> Unit
+pub fn[A : Component, B : Component, C : Component] World::each3(Self, (A, B, C) -> Unit) -> Unit
+pub fn World::entity_ops(Self, UInt) -> EntityOps
+pub fn[C : Component] World::get_component(Self, UInt) -> C?
+pub fn[R : Resource] World::get_resource(Self) -> R
+pub fn[C : Component] World::has_component(Self, UInt, _hint? : C?) -> Bool
+pub fn[R : Resource] World::has_resource(Self, _hint? : R?) -> Bool
+pub fn[C : Component] World::insert_component(Self, UInt, C) -> Bool
+pub fn World::is_alive(Self, UInt) -> Bool
+pub fn[Q : Query] World::query(Self) -> Iter[Q]
+pub fn[C : Component] World::query1(Self) -> Iter[C]
+pub fn[C : Component] World::query1_entities(Self) -> Iter[(UInt, C)]
+pub fn[A : Component, B : Component] World::query2(Self) -> Iter[(A, B)]
+pub fn[A : Component, B : Component] World::query2_entities(Self) -> Iter[(UInt, A, B)]
+pub fn[A : Component, B : Component, C : Component] World::query3(Self) -> Iter[(A, B, C)]
+pub fn[A : Component, B : Component, C : Component] World::query3_entities(Self) -> Iter[(UInt, A, B, C)]
+pub fn[C : Component] World::remove_component(Self, UInt, _hint? : C?) -> Unit
+pub fn[R : Resource] World::remove_resource(Self, _hint? : R?) -> Unit
+pub fn[C : Component] World::require_component(Self, UInt) -> C
+pub fn[R : Resource] World::set_resource(Self, R) -> Unit
+pub fn World::spawn(Self) -> UInt
+pub fn[B : Bundle] World::spawn_with(Self, B) -> UInt
+pub fn World::step(Self) -> Unit
+pub fn[R : Resource] World::try_get_resource(Self) -> R?
+
+// Type aliases
+pub type ComponentId = String
+
+pub type EntityId = UInt
+
+pub type ResourceId = String
+
+// Traits
+pub(open) trait Bundle {
+  insert_into(Self, World, UInt) -> Unit
+}
+pub impl[A : Component, B : Component] Bundle for (A, B)
+pub impl[A : Component, B : Component, C : Component] Bundle for (A, B, C)
+pub impl[A : Component, B : Component, C : Component, D : Component] Bundle for (A, B, C, D)
+
+pub(open) trait Component : HasTypeId {
+}
+
+pub(open) trait HasTypeId {
+  type_id() -> String
+}
+
+pub(open) trait Query {
+  iter(World) -> Iter[Self]
+}
+pub impl[A : Component, B : Component] Query for (A, B)
+pub impl[A : Component, B : Component, C : Component] Query for (A, B, C)
+
+pub(open) trait Resource : HasTypeId {
+}
+
