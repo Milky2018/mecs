@@ -1,0 +1,90 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mecs/v4"
+
+// Values
+
+// Errors
+
+// Types and methods
+pub extenum Component {
+}
+
+type EntityOps
+pub fn EntityOps::despawn(Self) -> Bool
+pub fn[C : ComponentValue] EntityOps::insert_component(Self, C) -> Unit
+pub fn[C : ComponentValue] EntityOps::remove_component(Self) -> Unit
+
+pub extenum Resource {
+}
+
+pub struct System {
+  name : String
+  func : (World) -> Unit
+}
+pub fn System::System((World) -> Unit, name? : String) -> Self
+
+pub struct World {
+  // private fields
+}
+pub fn World::World() -> Self
+pub fn World::add_system(Self, System) -> Unit
+pub fn World::add_system_fn(Self, (Self) -> Unit, name? : String) -> Unit
+pub fn World::despawn(Self, UInt) -> Bool
+pub fn[A : ComponentValue, B : ComponentValue] World::each2(Self, (A, B) -> Unit) -> Unit
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::each3(Self, (A, B, C) -> Unit) -> Unit
+pub fn World::entity_ops(Self, UInt) -> EntityOps
+pub fn[C : ComponentValue] World::get_component(Self, UInt) -> C?
+pub fn[R : ResourceValue] World::get_resource(Self) -> R
+pub fn[C : ComponentValue] World::has_component(Self, UInt, _hint? : C?) -> Bool
+pub fn[R : ResourceValue] World::has_resource(Self, _hint? : R?) -> Bool
+pub fn[C : ComponentValue] World::insert_component(Self, UInt, C) -> Bool
+pub fn World::is_alive(Self, UInt) -> Bool
+pub fn[Q : Query] World::query(Self) -> Iter[Q]
+pub fn[C : ComponentValue] World::query1(Self) -> Iter[C]
+pub fn[C : ComponentValue] World::query1_entities(Self) -> Iter[(UInt, C)]
+pub fn[A : ComponentValue, B : ComponentValue] World::query2(Self) -> Iter[(A, B)]
+pub fn[A : ComponentValue, B : ComponentValue] World::query2_entities(Self) -> Iter[(UInt, A, B)]
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3(Self) -> Iter[(A, B, C)]
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3_entities(Self) -> Iter[(UInt, A, B, C)]
+pub fn[C : ComponentValue] World::remove_component(Self, UInt, _hint? : C?) -> Unit
+pub fn[R : ResourceValue] World::remove_resource(Self, _hint? : R?) -> Unit
+pub fn[C : ComponentValue] World::require_component(Self, UInt) -> C
+pub fn[R : ResourceValue] World::set_resource(Self, R) -> Unit
+pub fn World::spawn(Self) -> UInt
+pub fn[B : Bundle] World::spawn_with(Self, B) -> UInt
+pub fn World::step(Self) -> Unit
+pub fn[R : ResourceValue] World::try_get_resource(Self) -> R?
+
+// Type aliases
+pub type ComponentId = String
+
+pub type EntityId = UInt
+
+pub type ResourceId = String
+
+// Traits
+pub(open) trait Bundle {
+  insert_into(Self, World, UInt) -> Unit
+}
+pub impl[A : ComponentValue, B : ComponentValue] Bundle for (A, B)
+pub impl[A : ComponentValue, B : ComponentValue, C : ComponentValue] Bundle for (A, B, C)
+pub impl[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue] Bundle for (A, B, C, D)
+
+pub(open) trait ComponentValue {
+  component_id() -> String
+  to_component(Self) -> Component
+  from_component(Component) -> Self?
+}
+
+pub(open) trait Query {
+  iter(World) -> Iter[Self]
+}
+pub impl[A : ComponentValue, B : ComponentValue] Query for (A, B)
+pub impl[A : ComponentValue, B : ComponentValue, C : ComponentValue] Query for (A, B, C)
+
+pub(open) trait ResourceValue {
+  resource_id() -> String
+  to_resource(Self) -> Resource
+  from_resource(Resource) -> Self?
+}
+
