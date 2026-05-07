@@ -1,0 +1,195 @@
+# mecs Production Roadmap
+
+This roadmap tracks the work needed to turn `mecs` from a compact experimental
+ECS into a production-quality MoonBit library. The current foundation is the
+extensible-enum design: users extend `Component` and `Resource`, then implement
+typed conversion traits for their own component and resource values.
+
+## Principles
+
+- [ ] Preserve type safety without compiler primitives, type-erased `Any`, or C
+      FFI.
+- [ ] Keep the core API portable across MoonBit stable targets.
+- [ ] Prefer explicit semantics over hidden mutation or scheduler behavior.
+- [ ] Add abstractions only when they remove real user burden or clarify safety.
+- [ ] Keep every public API change reflected in `pkg.generated.mbti` and tests.
+
+## Phase 1: API Hardening
+
+Goal: make the current API difficult to misuse before expanding features.
+
+- [ ] Replace `ComponentId = String` and `ResourceId = String` with stronger
+      opaque identifier types.
+- [ ] Define and test identifier collision behavior.
+- [ ] Add constructors or conventions for module-qualified component and
+      resource identifiers.
+- [ ] Document the exact relationship between `component_id`, `to_component`,
+      and `from_component`.
+- [ ] Decide whether mismatched component ids and enum variants should return
+      `None`, abort, or become a diagnostic-only invariant.
+- [ ] Add focused tests for missing entities, missing components, removed
+      components, and removed resources.
+
+Acceptance criteria:
+
+- [ ] Users cannot accidentally treat component and resource ids as arbitrary
+      strings in normal API use.
+- [ ] Public documentation explains how custom types become ECS values.
+- [ ] Tests cover id collisions and conversion mismatch behavior.
+
+## Phase 2: Mutation Semantics
+
+Goal: make system and query behavior deterministic.
+
+- [ ] Write down the contract for `queryN`, `queryN_entities`, and `eachN`.
+- [ ] Decide whether `queryN` returns snapshots, mutable values, or values that
+      must be explicitly written back.
+- [ ] Keep `eachN` writeback behavior explicit and tested.
+- [ ] Add tests for mutation persistence through `each2` and `each3`.
+- [ ] Add tests for despawn, component insertion, and component removal during
+      iteration.
+- [ ] Decide whether direct world mutation during iteration is supported,
+      discouraged, or blocked by command buffers.
+
+Acceptance criteria:
+
+- [ ] A system author can predict exactly when component changes become visible.
+- [ ] Iteration behavior remains deterministic when entities are changed
+      mid-frame.
+- [ ] The README shows the recommended mutation pattern.
+
+## Phase 3: Command Buffer
+
+Goal: support safe deferred world mutation from systems.
+
+- [ ] Add a `Commands` or `CommandBuffer` type.
+- [ ] Support deferred `spawn`, `despawn`, `insert_component`,
+      `remove_component`, `set_resource`, and `remove_resource`.
+- [ ] Add `World::apply_commands`.
+- [ ] Add a system execution mode that gives systems access to commands.
+- [ ] Define when commands are applied: after each system or after the full
+      stage.
+- [ ] Test ordering, duplicate commands, and commands targeting dead entities.
+
+Acceptance criteria:
+
+- [ ] Systems can request structural changes without invalidating active
+      queries.
+- [ ] Command application order is deterministic and documented.
+- [ ] Existing direct mutation APIs remain available for simple use cases.
+
+## Phase 4: Scheduler
+
+Goal: move from a linear system list to a predictable execution model.
+
+- [ ] Add named stages such as startup, update, fixed update, and cleanup.
+- [ ] Add system labels and ordering constraints.
+- [ ] Add optional run conditions.
+- [ ] Decide whether resources can drive scheduling state.
+- [ ] Keep the first scheduler single-threaded and deterministic.
+- [ ] Expose enough metadata for debugging system order.
+
+Acceptance criteria:
+
+- [ ] Users can express common game-loop and simulation schedules.
+- [ ] System order can be inspected in tests or diagnostics.
+- [ ] Scheduler behavior is independent of backend.
+
+## Phase 5: Query Coverage
+
+Goal: broaden query expressiveness without making the core brittle.
+
+- [ ] Refactor query internals so adding more arities is mechanical.
+- [ ] Add `query4` and `query5` first.
+- [ ] Add entity-returning versions as `Iter2[EntityId, (...)]`.
+- [ ] Consider optional filters such as `with`, `without`, and entity-only
+      queries.
+- [ ] Add tests for duplicate component types in a query and document whether
+      they are rejected or treated as repeated reads.
+
+Acceptance criteria:
+
+- [ ] Common multi-component systems do not need custom query code.
+- [ ] Query return shapes stay consistent across arities.
+- [ ] Query implementation remains small enough to audit.
+
+## Phase 6: Error Model
+
+Goal: avoid abort-first APIs in production paths.
+
+- [ ] Keep `require_component` and `get_resource` as convenience APIs.
+- [ ] Add safe alternatives for all APIs that can fail.
+- [ ] Consider typed errors for entity-not-found, component-not-found,
+      resource-not-found, and id/variant mismatch.
+- [ ] Document when an API returns `None`, returns `false`, returns an error, or
+      aborts.
+- [ ] Add tests for every failure mode.
+
+Acceptance criteria:
+
+- [ ] Production code can avoid aborting on expected missing ECS state.
+- [ ] Failure behavior is consistent across components, resources, and
+      entities.
+- [ ] The generated interface makes safe APIs obvious.
+
+## Phase 7: Ergonomics
+
+Goal: reduce boilerplate without weakening the model.
+
+- [ ] Improve README examples for components, resources, systems, and queries.
+- [ ] Add a complete small example package or executable.
+- [ ] Investigate whether MoonBit tooling can generate repetitive
+      `ComponentValue` and `ResourceValue` impls.
+- [ ] Add helper functions or naming conventions for common id patterns.
+- [ ] Provide migration notes from the previous experimental versions.
+
+Acceptance criteria:
+
+- [ ] A new user can define a component and run a system from the README alone.
+- [ ] The common component/resource boilerplate is either minimal or
+      mechanically generated.
+- [ ] Examples are covered by tests where possible.
+
+## Phase 8: Performance And Storage
+
+Goal: understand and improve runtime cost without sacrificing portability.
+
+- [ ] Add microbenchmarks for spawn, despawn, insert, remove, query, and
+      resources.
+- [ ] Measure the cost of map-based component storage.
+- [ ] Evaluate per-component sparse storage while retaining extensible-enum
+      values.
+- [ ] Avoid optimizing before query and mutation semantics are stable.
+- [ ] Track performance across wasm, wasm-gc, js, and native targets.
+
+Acceptance criteria:
+
+- [ ] Baseline performance is measured and repeatable.
+- [ ] Any storage refactor preserves the public type-safe API.
+- [ ] Performance-sensitive tradeoffs are documented.
+
+## Phase 9: Release Readiness
+
+Goal: prepare the library for real users and versioned releases.
+
+- [ ] Decide semantic versioning policy.
+- [ ] Add a changelog.
+- [ ] Expand package docs and examples.
+- [ ] Add CI commands matching local validation: `moon info`, `moon fmt`,
+      `moon check --warn-list +73`, and `moon test --target all`.
+- [ ] Document supported targets.
+- [ ] Audit public names before the first stable release.
+
+Acceptance criteria:
+
+- [ ] The repository has a documented release process.
+- [ ] CI verifies formatting, generated interfaces, warnings, and all-target
+      tests.
+- [ ] The public API is intentionally stable for the chosen release version.
+
+## Current Priority
+
+- [ ] Start with Phase 1.
+- [ ] Treat strong component and resource identifiers as the first production
+      API decision, because changing them later will be more expensive once
+      scheduler, commands, and broader queries build on top of them.
