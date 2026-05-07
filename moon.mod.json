@@ -9,7 +9,5 @@
     "ECS",
     "game"
   ],
-  "description": "An experimental ECS library in MoonBit. ",
-  "preferred-target": "native",
-  "suporrted-targets": "native"
+  "description": "A type-safe ECS library in MoonBit using extensible enums."
 }

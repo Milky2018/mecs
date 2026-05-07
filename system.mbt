@@ -5,7 +5,7 @@ pub struct System {
 }
 
 ///|
-let system_name_gen : Ref[UInt] = Ref::new(0)
+let system_name_gen : Ref[UInt] = Ref(0)
 
 ///|
 fn anonymous_system() -> String {

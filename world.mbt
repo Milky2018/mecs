@@ -11,7 +11,7 @@ struct World {
 pub fn World::World() -> Self {
   {
     entity_id_gen: 0,
-    entities: @set.Set::new(),
+    entities: Set([]),
     components: {},
     resources: {},
     systems: [],
@@ -159,7 +159,7 @@ pub fn[R : ResourceValue] World::remove_resource(
 
 ///|
 pub fn World::entity_ops(self : Self, entity : EntityId) -> EntityOps {
-  EntityOps::{ world: self, entity }
+  { world: self, entity }
 }
 
 ///|
