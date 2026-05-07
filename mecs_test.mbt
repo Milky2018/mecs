@@ -171,11 +171,11 @@ test "query3 only yields entities with all requested components" {
     (Position::{ x: 5, y: 5 }, Health::{ value: 3 }),
   )
   ignore(partial)
-  let rows : Array[(@mecs.EntityId, Position, Velocity, Health)] = world
+  let rows : Array[(@mecs.EntityId, (Position, Velocity, Health))] = world
     .query3_entities()
     .to_array()
   inspect(rows.length(), content="1")
-  let (entity, pos, vel, hp) = rows[0]
+  let (entity, (pos, vel, hp)) = rows[0]
   inspect(entity == complete, content="true")
   inspect((pos.x, pos.y, vel.x, vel.y, hp.value), content="(0, 0, 1, 2, 7)")
 }

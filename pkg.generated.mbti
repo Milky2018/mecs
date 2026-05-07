@@ -41,11 +41,11 @@ pub fn[C : ComponentValue] World::insert_component(Self, UInt, C) -> Bool
 pub fn World::is_alive(Self, UInt) -> Bool
 pub fn[Q : Query] World::query(Self) -> Iter[Q]
 pub fn[C : ComponentValue] World::query1(Self) -> Iter[C]
-pub fn[C : ComponentValue] World::query1_entities(Self) -> Iter[(UInt, C)]
+pub fn[C : ComponentValue] World::query1_entities(Self) -> Iter2[UInt, C]
 pub fn[A : ComponentValue, B : ComponentValue] World::query2(Self) -> Iter[(A, B)]
-pub fn[A : ComponentValue, B : ComponentValue] World::query2_entities(Self) -> Iter[(UInt, A, B)]
+pub fn[A : ComponentValue, B : ComponentValue] World::query2_entities(Self) -> Iter2[UInt, (A, B)]
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3(Self) -> Iter[(A, B, C)]
-pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3_entities(Self) -> Iter[(UInt, A, B, C)]
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3_entities(Self) -> Iter2[UInt, (A, B, C)]
 pub fn[C : ComponentValue] World::remove_component(Self, UInt, _hint? : C?) -> Unit
 pub fn[R : ResourceValue] World::remove_resource(Self, _hint? : R?) -> Unit
 pub fn[C : ComponentValue] World::require_component(Self, UInt) -> C
