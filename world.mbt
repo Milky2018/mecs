@@ -73,10 +73,8 @@ pub fn[C : ComponentValue] World::has_component(
   entity : EntityId,
   _hint? : C? = None,
 ) -> Bool {
-  match self.component_map(entity) {
-    Some(map) => map.contains(C::component_id())
-    None => false
-  }
+  let component : C? = self.get_component(entity)
+  component is Some(_)
 }
 
 ///|
@@ -130,7 +128,8 @@ pub fn[R : ResourceValue] World::has_resource(
   self : Self,
   _hint? : R? = None,
 ) -> Bool {
-  self.resources.contains(R::resource_id())
+  let resource : R? = self.try_get_resource()
+  resource is Some(_)
 }
 
 ///|

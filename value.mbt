@@ -1,8 +1,34 @@
 ///|
-pub type ComponentId = String
+pub struct ComponentId {
+  name : String
+} derive(Eq, Hash, Debug)
 
 ///|
-pub type ResourceId = String
+pub fn ComponentId::ComponentId(name : String) -> Self {
+  guard !name.is_empty() else { abort("component id cannot be empty") }
+  { name, }
+}
+
+///|
+pub fn ComponentId::name(self : Self) -> String {
+  self.name
+}
+
+///|
+pub struct ResourceId {
+  name : String
+} derive(Eq, Hash, Debug)
+
+///|
+pub fn ResourceId::ResourceId(name : String) -> Self {
+  guard !name.is_empty() else { abort("resource id cannot be empty") }
+  { name, }
+}
+
+///|
+pub fn ResourceId::name(self : Self) -> String {
+  self.name
+}
 
 ///|
 pub extenum Component {}

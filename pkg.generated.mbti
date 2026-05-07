@@ -1,6 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "Milky2018/mecs"
 
+import {
+  "moonbitlang/core/debug",
+}
+
 // Values
 
 // Errors
@@ -9,6 +13,12 @@ package "Milky2018/mecs"
 pub extenum Component {
 }
 
+pub struct ComponentId {
+  name : String
+} derive(Eq, Hash, @debug.Debug)
+pub fn ComponentId::ComponentId(String) -> Self
+pub fn ComponentId::name(Self) -> String
+
 type EntityOps
 pub fn EntityOps::despawn(Self) -> Bool
 pub fn[C : ComponentValue] EntityOps::insert_component(Self, C) -> Unit
@@ -16,6 +26,12 @@ pub fn[C : ComponentValue] EntityOps::remove_component(Self) -> Unit
 
 pub extenum Resource {
 }
+
+pub struct ResourceId {
+  name : String
+} derive(Eq, Hash, @debug.Debug)
+pub fn ResourceId::ResourceId(String) -> Self
+pub fn ResourceId::name(Self) -> String
 
 pub struct System {
   name : String
@@ -56,11 +72,7 @@ pub fn World::step(Self) -> Unit
 pub fn[R : ResourceValue] World::try_get_resource(Self) -> R?
 
 // Type aliases
-pub type ComponentId = String
-
 pub type EntityId = UInt
-
-pub type ResourceId = String
 
 // Traits
 pub(open) trait Bundle {
@@ -71,7 +83,7 @@ pub impl[A : ComponentValue, B : ComponentValue, C : ComponentValue] Bundle for 
 pub impl[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue] Bundle for (A, B, C, D)
 
 pub(open) trait ComponentValue {
-  component_id() -> String
+  component_id() -> ComponentId
   to_component(Self) -> Component
   from_component(Component) -> Self?
 }
@@ -83,7 +95,7 @@ pub impl[A : ComponentValue, B : ComponentValue] Query for (A, B)
 pub impl[A : ComponentValue, B : ComponentValue, C : ComponentValue] Query for (A, B, C)
 
 pub(open) trait ResourceValue {
-  resource_id() -> String
+  resource_id() -> ResourceId
   to_resource(Self) -> Resource
   from_resource(Resource) -> Self?
 }

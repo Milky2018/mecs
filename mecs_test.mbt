@@ -21,20 +21,32 @@ priv struct StepCount {
 }
 
 ///|
+priv struct PositionAlias {
+  value : Int
+}
+
+///|
+priv struct StepCountAlias {
+  value : Int
+}
+
+///|
 extenum @mecs.Component += {
   Position(Position)
   Velocity(Velocity)
   Health(Health)
+  PositionAlias(PositionAlias)
 }
 
 ///|
 extenum @mecs.Resource += {
   StepCount(StepCount)
+  StepCountAlias(StepCountAlias)
 }
 
 ///|
 impl @mecs.ComponentValue for Position with component_id() {
-  "Position"
+  ComponentId("Position")
 }
 
 ///|
@@ -52,7 +64,7 @@ impl @mecs.ComponentValue for Position with from_component(component) {
 
 ///|
 impl @mecs.ComponentValue for Velocity with component_id() {
-  "Velocity"
+  ComponentId("Velocity")
 }
 
 ///|
@@ -70,7 +82,7 @@ impl @mecs.ComponentValue for Velocity with from_component(component) {
 
 ///|
 impl @mecs.ComponentValue for Health with component_id() {
-  "Health"
+  ComponentId("Health")
 }
 
 ///|
@@ -88,7 +100,7 @@ impl @mecs.ComponentValue for Health with from_component(component) {
 
 ///|
 impl @mecs.ResourceValue for StepCount with resource_id() {
-  "StepCount"
+  ResourceId("StepCount")
 }
 
 ///|
@@ -102,6 +114,66 @@ impl @mecs.ResourceValue for StepCount with from_resource(resource) {
     StepCount(value) => Some(value)
     _ => None
   }
+}
+
+///|
+impl @mecs.ComponentValue for PositionAlias with component_id() {
+  ComponentId("Position")
+}
+
+///|
+impl @mecs.ComponentValue for PositionAlias with to_component(self) {
+  PositionAlias(self)
+}
+
+///|
+impl @mecs.ComponentValue for PositionAlias with from_component(component) {
+  match component {
+    PositionAlias(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+impl @mecs.ResourceValue for StepCountAlias with resource_id() {
+  ResourceId("StepCount")
+}
+
+///|
+impl @mecs.ResourceValue for StepCountAlias with to_resource(self) {
+  StepCountAlias(self)
+}
+
+///|
+impl @mecs.ResourceValue for StepCountAlias with from_resource(resource) {
+  match resource {
+    StepCountAlias(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+fn has_position(world : @mecs.World, entity : @mecs.EntityId) -> Bool {
+  let hint : Position? = None
+  world.has_component(entity, _hint=hint)
+}
+
+///|
+fn has_position_alias(world : @mecs.World, entity : @mecs.EntityId) -> Bool {
+  let hint : PositionAlias? = None
+  world.has_component(entity, _hint=hint)
+}
+
+///|
+fn has_step_count(world : @mecs.World) -> Bool {
+  let hint : StepCount? = None
+  world.has_resource(_hint=hint)
+}
+
+///|
+fn has_step_count_alias(world : @mecs.World) -> Bool {
+  let hint : StepCountAlias? = None
+  world.has_resource(_hint=hint)
 }
 
 ///|
@@ -193,4 +265,90 @@ test "entity ops can dynamically add components" {
   inspect(rows.length(), content="1")
   let (vel, pos) = rows[0]
   inspect((pos.x, pos.y, vel.x, vel.y), content="(1, 2, 3, 4)")
+}
+
+///|
+test "component ids are opaque and use variant names" {
+  let id : @mecs.ComponentId = ComponentId("Position")
+  inspect(id.name(), content="Position")
+  let resource_id : @mecs.ResourceId = ResourceId("StepCount")
+  inspect(resource_id.name(), content="StepCount")
+}
+
+///|
+test "component id collision overwrites one storage slot" {
+  let world = @mecs.World()
+  let entity = world.spawn_with(
+    (Position::{ x: 1, y: 2 }, Velocity::{ x: 0, y: 0 }),
+  )
+  inspect(has_position(world, entity), content="true")
+  inspect(has_position_alias(world, entity), content="false")
+  ignore(world.insert_component(entity, PositionAlias::{ value: 42 }))
+  let position : Position? = world.get_component(entity)
+  let alias_pos : PositionAlias? = world.get_component(entity)
+  inspect(position is Some(_), content="false")
+  inspect(alias_pos is Some(_), content="true")
+  inspect(
+    match alias_pos {
+      Some(value) => value.value
+      None => -1
+    },
+    content="42",
+  )
+  inspect(has_position(world, entity), content="false")
+  inspect(has_position_alias(world, entity), content="true")
+}
+
+///|
+test "resource id collision overwrites one storage slot" {
+  let world = @mecs.World()
+  world.set_resource(StepCount::{ value: 1 })
+  inspect(has_step_count(world), content="true")
+  inspect(has_step_count_alias(world), content="false")
+  world.set_resource(StepCountAlias::{ value: 9 })
+  let counter : StepCount? = world.try_get_resource()
+  let alias_resource : StepCountAlias? = world.try_get_resource()
+  inspect(counter is Some(_), content="false")
+  inspect(alias_resource is Some(_), content="true")
+  inspect(
+    match alias_resource {
+      Some(value) => value.value
+      None => -1
+    },
+    content="9",
+  )
+  inspect(has_step_count(world), content="false")
+  inspect(has_step_count_alias(world), content="true")
+}
+
+///|
+test "missing entity component and resource APIs are safe by default" {
+  let world = @mecs.World()
+  inspect(world.is_alive(99), content="false")
+  inspect(world.insert_component(99, Position::{ x: 1, y: 1 }), content="false")
+  let pos : Position? = world.get_component(99)
+  inspect(pos is Some(_), content="false")
+  inspect(has_position(world, 99), content="false")
+  let counter : StepCount? = world.try_get_resource()
+  inspect(counter is Some(_), content="false")
+  inspect(has_step_count(world), content="false")
+}
+
+///|
+test "removed component and resource APIs return absence" {
+  let world = @mecs.World()
+  let entity = world.spawn_with(
+    (Position::{ x: 7, y: 8 }, Velocity::{ x: 0, y: 0 }),
+  )
+  world.set_resource(StepCount::{ value: 3 })
+  inspect(has_position(world, entity), content="true")
+  inspect(has_step_count(world), content="true")
+  world.remove_component(entity, _hint=(None : Position?))
+  world.remove_resource(_hint=(None : StepCount?))
+  inspect(has_position(world, entity), content="false")
+  inspect(has_step_count(world), content="false")
+  let pos : Position? = world.get_component(entity)
+  let count : StepCount? = world.try_get_resource()
+  inspect(pos is Some(_), content="false")
+  inspect(count is Some(_), content="false")
 }

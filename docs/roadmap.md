@@ -18,24 +18,24 @@ typed conversion traits for their own component and resource values.
 
 Goal: make the current API difficult to misuse before expanding features.
 
-- [ ] Replace `ComponentId = String` and `ResourceId = String` with stronger
+- [x] Replace `ComponentId = String` and `ResourceId = String` with stronger
       opaque identifier types.
-- [ ] Define and test identifier collision behavior.
-- [ ] Add constructors or conventions for module-qualified component and
-      resource identifiers.
-- [ ] Document the exact relationship between `component_id`, `to_component`,
+- [x] Define and test identifier collision behavior.
+- [x] Add constructors and document the convention that ids match extensible
+      enum variant names exactly.
+- [x] Document the exact relationship between `component_id`, `to_component`,
       and `from_component`.
-- [ ] Decide whether mismatched component ids and enum variants should return
+- [x] Decide whether mismatched component ids and enum variants should return
       `None`, abort, or become a diagnostic-only invariant.
-- [ ] Add focused tests for missing entities, missing components, removed
+- [x] Add focused tests for missing entities, missing components, removed
       components, and removed resources.
 
 Acceptance criteria:
 
-- [ ] Users cannot accidentally treat component and resource ids as arbitrary
+- [x] Users cannot accidentally treat component and resource ids as arbitrary
       strings in normal API use.
-- [ ] Public documentation explains how custom types become ECS values.
-- [ ] Tests cover id collisions and conversion mismatch behavior.
+- [x] Public documentation explains how custom types become ECS values.
+- [x] Tests cover id collisions and conversion mismatch behavior.
 
 ## Phase 2: Mutation Semantics
 
@@ -189,7 +189,7 @@ Acceptance criteria:
 
 ## Current Priority
 
-- [ ] Start with Phase 1.
-- [ ] Treat strong component and resource identifiers as the first production
+- [x] Start with Phase 1.
+- [x] Treat strong component and resource identifiers as the first production
       API decision, because changing them later will be more expensive once
       scheduler, commands, and broader queries build on top of them.
