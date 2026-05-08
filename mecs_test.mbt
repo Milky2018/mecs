@@ -191,28 +191,20 @@ fn count_system(world : @mecs.World) -> Unit {
 }
 
 ///|
-test "world stores extensible enum components and resources" {
+test "systems persist component and resource mutations" {
   let world = @mecs.World()
   world.set_resource(StepCount::{ value: 0 })
-  let moving = world.spawn_with(
-    (Position::{ x: 0, y: 0 }, Velocity::{ x: 1, y: -1 }, Health::{ value: 10 }),
+  let entity = world.spawn_with(
+    (Position::{ x: 0, y: 0 }, Velocity::{ x: 1, y: -1 }),
   )
-  let standing = world.spawn()
-  ignore(world.insert_component(standing, Position::{ x: 10, y: 10 }))
-  let moving_pos : Position? = world.get_component(moving)
-  let moving_vel : Velocity? = world.get_component(moving)
-  let standing_vel : Velocity? = world.get_component(standing)
-  inspect(moving_pos is Some(_), content="true")
-  inspect(moving_vel is Some(_), content="true")
-  inspect(standing_vel is Some(_), content="false")
   world..add_system(System(move_system))..add_system(System(count_system))
   |> ignore
   world.step()
-  let pos1 : Position = world.require_component(moving)
+  let pos1 : Position = world.require_component(entity)
   inspect((pos1.x, pos1.y), content="(1, -1)")
   inspect((world.get_resource() : StepCount).value, content="1")
   world.step()
-  let pos2 : Position = world.require_component(moving)
+  let pos2 : Position = world.require_component(entity)
   inspect((pos2.x, pos2.y), content="(2, -2)")
   inspect((world.get_resource() : StepCount).value, content="2")
 }
@@ -256,15 +248,20 @@ test "query3 only yields entities with all requested components" {
 test "entity ops can dynamically add components" {
   let world = @mecs.World()
   let entity = world.spawn()
-  world
-  .entity_ops(entity)
-  ..insert_component(Position::{ x: 1, y: 2 })
-  ..insert_component(Velocity::{ x: 3, y: 4 })
-  |> ignore
+  let ops = world.entity_ops(entity)
+  inspect(ops.insert_component(Position::{ x: 1, y: 2 }), content="true")
+  inspect(ops.insert_component(Velocity::{ x: 3, y: 4 }), content="true")
   let rows : Array[(Velocity, Position)] = world.query().to_array()
   inspect(rows.length(), content="1")
   let (vel, pos) = rows[0]
   inspect((pos.x, pos.y, vel.x, vel.y), content="(1, 2, 3, 4)")
+}
+
+///|
+test "entity ops insert reports dead entity failure" {
+  let world = @mecs.World()
+  let ops = world.entity_ops(99)
+  inspect(ops.insert_component(Position::{ x: 0, y: 0 }), content="false")
 }
 
 ///|

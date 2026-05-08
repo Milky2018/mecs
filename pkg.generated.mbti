@@ -21,7 +21,7 @@ pub fn ComponentId::name(Self) -> String
 
 type EntityOps
 pub fn EntityOps::despawn(Self) -> Bool
-pub fn[C : ComponentValue] EntityOps::insert_component(Self, C) -> Unit
+pub fn[C : ComponentValue] EntityOps::insert_component(Self, C) -> Bool
 pub fn[C : ComponentValue] EntityOps::remove_component(Self) -> Unit
 
 pub extenum Resource {

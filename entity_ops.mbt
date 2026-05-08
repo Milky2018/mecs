@@ -8,8 +8,8 @@ struct EntityOps {
 pub fn[C : ComponentValue] EntityOps::insert_component(
   self : Self,
   component : C,
-) -> Unit {
-  ignore(self.world.insert_component(self.entity, component))
+) -> Bool {
+  self.world.insert_component(self.entity, component)
 }
 
 ///|
