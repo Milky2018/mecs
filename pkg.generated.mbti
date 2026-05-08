@@ -13,6 +13,20 @@ pub suberror NotSpawned {
 }
 
 // Types and methods
+pub struct CommandSystem {
+  name : String
+  func : (World, Commands) -> Unit
+}
+pub fn CommandSystem::CommandSystem((World, Commands) -> Unit, name? : String) -> Self
+
+type Commands
+pub fn Commands::despawn(Self, UInt) -> Unit
+pub fn[C : ComponentValue] Commands::insert_component(Self, UInt, C) -> Unit
+pub fn[C : ComponentValue] Commands::remove_component(Self, UInt, _hint? : C?) -> Unit
+pub fn[R : ResourceValue] Commands::remove_resource(Self, _hint? : R?) -> Unit
+pub fn[R : ResourceValue] Commands::set_resource(Self, R) -> Unit
+pub fn Commands::spawn(Self) -> UInt
+
 pub extenum Component {
 }
 
@@ -46,8 +60,12 @@ pub struct World {
   // private fields
 }
 pub fn World::World() -> Self
+pub fn World::add_command_system(Self, CommandSystem) -> Unit
+pub fn World::add_command_system_fn(Self, (Self, Commands) -> Unit, name? : String) -> Unit
 pub fn World::add_system(Self, System) -> Unit
 pub fn World::add_system_fn(Self, (Self) -> Unit, name? : String) -> Unit
+pub fn World::apply_commands(Self, Commands) -> Unit raise NotSpawned
+pub fn World::commands(Self) -> Commands
 pub fn World::despawn(Self, UInt) -> Bool
 pub fn[A : ComponentValue, B : ComponentValue] World::each2(Self, (A, B) -> Unit) -> Unit raise NotSpawned
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::each3(Self, (A, B, C) -> Unit) -> Unit raise NotSpawned
@@ -71,7 +89,7 @@ pub fn[C : ComponentValue] World::require_component(Self, UInt) -> C
 pub fn[R : ResourceValue] World::set_resource(Self, R) -> Unit
 pub fn World::spawn(Self) -> UInt
 pub fn[B : Bundle] World::spawn_with(Self, B) -> UInt
-pub fn World::step(Self) -> Unit
+pub fn World::step(Self) -> Unit raise NotSpawned
 pub fn[R : ResourceValue] World::try_get_resource(Self) -> R?
 
 // Type aliases

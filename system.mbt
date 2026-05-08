@@ -5,6 +5,18 @@ pub struct System {
 }
 
 ///|
+pub struct CommandSystem {
+  name : String
+  func : (World, Commands) -> Unit
+}
+
+///|
+priv enum SystemEntry {
+  DirectSystem(System)
+  DeferredSystem(CommandSystem)
+}
+
+///|
 let system_name_gen : Ref[UInt] = Ref(0)
 
 ///|
@@ -17,6 +29,14 @@ fn anonymous_system() -> String {
 ///|
 pub fn System::System(
   func : (World) -> Unit,
+  name? : String = anonymous_system(),
+) -> Self {
+  { name, func }
+}
+
+///|
+pub fn CommandSystem::CommandSystem(
+  func : (World, Commands) -> Unit,
   name? : String = anonymous_system(),
 ) -> Self {
   { name, func }

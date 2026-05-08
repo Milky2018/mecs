@@ -191,6 +191,14 @@ fn count_system(world : @mecs.World) -> Unit {
 }
 
 ///|
+fn set_count_command_system(
+  _world : @mecs.World,
+  commands : @mecs.Commands,
+) -> Unit {
+  commands.set_resource(StepCount::{ value: 10 })
+}
+
+///|
 test "systems persist component and resource mutations" {
   let world = @mecs.World()
   world.set_resource(StepCount::{ value: 0 })
@@ -199,14 +207,87 @@ test "systems persist component and resource mutations" {
   )
   world..add_system(System(move_system))..add_system(System(count_system))
   |> ignore
-  world.step()
+  try! world.step()
   let pos1 : Position = world.require_component(entity)
   inspect((pos1.x, pos1.y), content="(1, -1)")
   inspect((world.get_resource() : StepCount).value, content="1")
-  world.step()
+  try! world.step()
   let pos2 : Position = world.require_component(entity)
   inspect((pos2.x, pos2.y), content="(2, -2)")
   inspect((world.get_resource() : StepCount).value, content="2")
+}
+
+///|
+test "commands apply deferred spawn insert and resources in order" {
+  let world = @mecs.World()
+  let commands = world.commands()
+  let entity = commands.spawn()
+  commands.insert_component(entity, Position::{ x: 1, y: 1 })
+  commands.insert_component(entity, Position::{ x: 2, y: 3 })
+  commands.insert_component(entity, Velocity::{ x: 4, y: 5 })
+  commands.set_resource(StepCount::{ value: 1 })
+  commands.set_resource(StepCount::{ value: 2 })
+  try! world.apply_commands(commands)
+  inspect(world.is_alive(entity), content="true")
+  let pos : Position = world.require_component(entity)
+  let vel : Velocity = world.require_component(entity)
+  inspect((pos.x, pos.y, vel.x, vel.y), content="(2, 3, 4, 5)")
+  inspect((world.get_resource() : StepCount).value, content="2")
+  try! world.apply_commands(commands)
+  inspect(world.is_alive(entity), content="true")
+  inspect((world.get_resource() : StepCount).value, content="2")
+}
+
+///|
+test "commands remove and despawn duplicate operations deterministically" {
+  let world = @mecs.World()
+  let entity = world.spawn_with(
+    (Position::{ x: 1, y: 2 }, Velocity::{ x: 3, y: 4 }),
+  )
+  world.set_resource(StepCount::{ value: 9 })
+  let commands = world.commands()
+  commands.remove_component(entity, _hint=(None : Velocity?))
+  commands.remove_component(entity, _hint=(None : Velocity?))
+  commands.remove_resource(_hint=(None : StepCount?))
+  commands.remove_resource(_hint=(None : StepCount?))
+  commands.despawn(entity)
+  commands.despawn(entity)
+  try! world.apply_commands(commands)
+  inspect(world.is_alive(entity), content="false")
+  let pos : Position? = world.get_component(entity)
+  let vel : Velocity? = world.get_component(entity)
+  let count : StepCount? = world.try_get_resource()
+  inspect(pos is Some(_), content="false")
+  inspect(vel is Some(_), content="false")
+  inspect(count is Some(_), content="false")
+}
+
+///|
+test "commands targeting dead entities report not spawned on insert" {
+  let world = @mecs.World()
+  let commands = world.commands()
+  commands.despawn(99)
+  commands.insert_component(99, Position::{ x: 1, y: 1 })
+  let result = try? world.apply_commands(commands)
+  inspect(
+    match result {
+      Err(NotSpawned(entity)) => entity == 99
+      _ => false
+    },
+    content="true",
+  )
+}
+
+///|
+test "command systems apply after each system" {
+  let world = @mecs.World()
+  world.set_resource(StepCount::{ value: 0 })
+  world
+  ..add_command_system(CommandSystem(set_count_command_system))
+  ..add_system(System(count_system))
+  |> ignore
+  try! world.step()
+  inspect((world.get_resource() : StepCount).value, content="11")
 }
 
 ///|

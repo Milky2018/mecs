@@ -125,7 +125,7 @@ test "readme quick start" {
   ..add_system(System(readme_move_system))
   ..add_system(System(readme_frame_system))
   |> ignore
-  world.step()
+  try! world.step()
   let position : ReadmePosition = world.require_component(entity)
   inspect((position.x, position.y), content="(2, 3)")
   inspect((world.get_resource() : ReadmeFrame).value, content="1")
@@ -163,6 +163,31 @@ inserted or removed during the callback and those structural changes persist.
 If the yielded entity itself is despawned before `eachN` writes components back,
 `eachN` raises `NotSpawned(entity)`.
 
-Until command buffers are added, avoid structurally mutating the same queried
-component slots inside an `eachN` callback. The callback-owned values are written
-back after the callback, so that writeback wins deterministically.
+Prefer command buffers for structural changes requested from systems. If direct
+world mutation changes the same queried component slots inside an `eachN`
+callback, the callback-owned values are written back after the callback, so that
+writeback wins deterministically.
+
+## Command Buffers
+
+`World::commands` creates a deferred command buffer. Commands are recorded in
+call order and become visible only when `World::apply_commands` runs. Applying a
+buffer consumes it, so applying the same buffer again is a no-op.
+
+Supported commands are `spawn`, `despawn`, `insert_component`,
+`remove_component`, `set_resource`, and `remove_resource`. `Commands::spawn`
+reserves and returns an `EntityId` immediately, but the entity is not alive until
+the buffer is applied. This lets users queue inserts for the newly reserved
+entity in the same buffer.
+
+`World::apply_commands` applies commands in FIFO order. Duplicate inserts or
+resource sets target the same storage slot, so the later command wins. Duplicate
+despawns, component removals, and resource removals are no-ops after the first
+successful removal. Inserting a component into an entity that is dead at the time
+that command is applied raises `NotSpawned(entity)`.
+
+Systems that need deferred structural mutation can be registered with
+`CommandSystem` through `World::add_command_system` or
+`World::add_command_system_fn`. During `World::step`, commands from a command
+system are applied immediately after that system finishes and before the next
+system runs. Direct world mutation APIs remain available for simple use cases.

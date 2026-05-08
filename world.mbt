@@ -4,7 +4,7 @@ struct World {
   entities : @set.Set[EntityId]
   components : Map[EntityId, Map[ComponentId, Component]]
   resources : Map[ResourceId, Resource]
-  systems : Array[System]
+  systems : Array[SystemEntry]
 }
 
 ///|
@@ -20,11 +20,26 @@ pub fn World::World() -> Self {
 
 ///|
 pub fn World::spawn(self : Self) -> EntityId {
+  let entity = self.reserve_entity_id()
+  self.spawn_reserved(entity)
+  entity
+}
+
+///|
+fn World::reserve_entity_id(self : Self) -> EntityId {
   let entity = self.entity_id_gen
   self.entity_id_gen += 1
+  entity
+}
+
+///|
+fn World::spawn_reserved(self : Self, entity : EntityId) -> Unit {
+  if entity >= self.entity_id_gen {
+    self.entity_id_gen = entity + 1
+  }
+  guard !self.is_alive(entity) else { return }
   self.entities.add(entity)
   self.components[entity] = {}
-  entity
 }
 
 ///|
@@ -61,9 +76,23 @@ pub fn[C : ComponentValue] World::insert_component(
   entity : EntityId,
   component : C,
 ) -> Unit raise NotSpawned {
+  self.insert_component_value(
+    entity,
+    C::component_id(),
+    C::to_component(component),
+  )
+}
+
+///|
+fn World::insert_component_value(
+  self : Self,
+  entity : EntityId,
+  id : ComponentId,
+  component : Component,
+) -> Unit raise NotSpawned {
   guard self.is_alive(entity) else { raise NotSpawned(entity) }
   let map = self.components.get_or_init(entity, fn() { {} })
-  map[C::component_id()] = C::to_component(component)
+  map[id] = component
 }
 
 ///|
@@ -108,8 +137,17 @@ pub fn[C : ComponentValue] World::remove_component(
   entity : EntityId,
   _hint? : C? = None,
 ) -> Unit {
+  self.remove_component_value(entity, C::component_id())
+}
+
+///|
+fn World::remove_component_value(
+  self : Self,
+  entity : EntityId,
+  id : ComponentId,
+) -> Unit {
   match self.component_map(entity) {
-    Some(map) => map.remove(C::component_id())
+    Some(map) => map.remove(id)
     None => ()
   }
 }
@@ -162,7 +200,7 @@ pub fn World::entity_ops(self : Self, entity : EntityId) -> EntityOps {
 
 ///|
 pub fn World::add_system(self : Self, system : System) -> Unit {
-  self.systems.push(system)
+  self.systems.push(DirectSystem(system))
 }
 
 ///|
@@ -175,8 +213,29 @@ pub fn World::add_system_fn(
 }
 
 ///|
-pub fn World::step(self : Self) -> Unit {
+pub fn World::add_command_system(self : Self, system : CommandSystem) -> Unit {
+  self.systems.push(DeferredSystem(system))
+}
+
+///|
+pub fn World::add_command_system_fn(
+  self : Self,
+  func : (World, Commands) -> Unit,
+  name? : String = "system",
+) -> Unit {
+  self.add_command_system(CommandSystem(func, name~))
+}
+
+///|
+pub fn World::step(self : Self) -> Unit raise NotSpawned {
   for system in self.systems {
-    (system.func)(self)
+    match system {
+      DirectSystem(system) => (system.func)(self)
+      DeferredSystem(system) => {
+        let commands = self.commands()
+        (system.func)(self, commands)
+        self.apply_commands(commands)
+      }
+    }
   }
 }

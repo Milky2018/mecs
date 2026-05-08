@@ -62,21 +62,21 @@ Acceptance criteria:
 
 Goal: support safe deferred world mutation from systems.
 
-- [ ] Add a `Commands` type.
-- [ ] Support deferred `spawn`, `despawn`, `insert_component`,
+- [x] Add a `Commands` type.
+- [x] Support deferred `spawn`, `despawn`, `insert_component`,
       `remove_component`, `set_resource`, and `remove_resource`.
-- [ ] Add `World::apply_commands`.
-- [ ] Add a system execution mode that gives systems access to commands.
-- [ ] Define when commands are applied: after each system or after the full
+- [x] Add `World::apply_commands`.
+- [x] Add a system execution mode that gives systems access to commands.
+- [x] Define when commands are applied: after each system or after the full
       stage.
-- [ ] Test ordering, duplicate commands, and commands targeting dead entities.
+- [x] Test ordering, duplicate commands, and commands targeting dead entities.
 
 Acceptance criteria:
 
-- [ ] Systems can request structural changes without invalidating active
+- [x] Systems can request structural changes without invalidating active
       queries.
-- [ ] Command application order is deterministic and documented.
-- [ ] Existing direct mutation APIs remain available for simple use cases.
+- [x] Command application order is deterministic and documented.
+- [x] Existing direct mutation APIs remain available for simple use cases.
 
 ## Phase 4: Scheduler
 
