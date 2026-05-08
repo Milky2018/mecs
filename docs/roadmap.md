@@ -186,6 +186,8 @@ Optimization backlog:
       driving component deterministically.
 - [x] Cache component stores inside query iterators and probe them directly
       instead of repeatedly calling `World::get_component`.
+- [x] Make `query2` and `query3` use direct value iterators when entity ids are
+      not requested.
 - [x] Add streaming `for_each2` and `for_each3` traversal helpers to avoid
       allocating result arrays for system-style query loops.
 - [x] Make streaming traversal helpers drive directly from the chosen component
