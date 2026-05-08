@@ -191,6 +191,59 @@ fn count_system(world : @mecs.World) -> Unit {
 }
 
 ///|
+fn add_step_count(world : @mecs.World, amount : Int) -> Unit {
+  let counter : StepCount = world.get_resource()
+  world.set_resource(StepCount::{ value: counter.value + amount })
+}
+
+///|
+fn startup_counter(world : @mecs.World) -> Unit {
+  add_step_count(world, 100)
+}
+
+///|
+fn update_counter(world : @mecs.World) -> Unit {
+  add_step_count(world, 10)
+}
+
+///|
+fn fixed_counter(world : @mecs.World) -> Unit {
+  add_step_count(world, 1000)
+}
+
+///|
+fn cleanup_counter(world : @mecs.World) -> Unit {
+  add_step_count(world, 1)
+}
+
+///|
+fn order_first(world : @mecs.World) -> Unit {
+  let counter : StepCount = world.get_resource()
+  world.set_resource(StepCount::{ value: counter.value * 10 + 1 })
+}
+
+///|
+fn order_middle(world : @mecs.World) -> Unit {
+  let counter : StepCount = world.get_resource()
+  world.set_resource(StepCount::{ value: counter.value * 10 + 2 })
+}
+
+///|
+fn order_last(world : @mecs.World) -> Unit {
+  let counter : StepCount = world.get_resource()
+  world.set_resource(StepCount::{ value: counter.value * 10 + 3 })
+}
+
+///|
+fn step_count_is_zero(world : @mecs.World) -> Bool {
+  let counter : StepCount? = world.try_get_resource()
+  match counter {
+    Some(counter) => counter.value == 0
+    None => false
+  }
+}
+
+///|
 fn set_count_command_system(
   _world : @mecs.World,
   commands : @mecs.Commands,
@@ -288,6 +341,59 @@ test "command systems apply after each system" {
   |> ignore
   try! world.step()
   inspect((world.get_resource() : StepCount).value, content="11")
+}
+
+///|
+test "scheduler runs named stages deterministically" {
+  let world = @mecs.World()
+  world.set_resource(StepCount::{ value: 0 })
+  world
+  ..add_system_to_stage(Startup, System(startup_counter, name="startup"))
+  ..add_system_to_stage(Update, System(update_counter, name="update"))
+  ..add_system_to_stage(FixedUpdate, System(fixed_counter, name="fixed"))
+  ..add_system_to_stage(Cleanup, System(cleanup_counter, name="cleanup"))
+  |> ignore
+  try! world.step()
+  inspect((world.get_resource() : StepCount).value, content="111")
+  try! world.fixed_step()
+  inspect((world.get_resource() : StepCount).value, content="1111")
+  try! world.step()
+  inspect((world.get_resource() : StepCount).value, content="1122")
+}
+
+///|
+test "scheduler orders systems by labels and exposes metadata" {
+  let world = @mecs.World()
+  world.set_resource(StepCount::{ value: 0 })
+  world.add_system_to_stage(Update, System(order_last, name="last"), after=[
+    SystemLabel("middle"),
+  ])
+  world.add_system_to_stage(Update, System(order_first, name="first"), before=[
+    SystemLabel("middle"),
+  ])
+  world.add_system_to_stage(Update, System(order_middle, name="middle"))
+  let order = world.system_order(stage=Update)
+  inspect(
+    (order[0].name(), order[1].name(), order[2].name()),
+    content="(\"first\", \"middle\", \"last\")",
+  )
+  try! world.step()
+  inspect((world.get_resource() : StepCount).value, content="123")
+}
+
+///|
+test "scheduler run conditions can read resources" {
+  let world = @mecs.World()
+  world.set_resource(StepCount::{ value: 0 })
+  world.add_system_to_stage(
+    Update,
+    System(count_system, name="conditional"),
+    run_if=step_count_is_zero,
+  )
+  try! world.step()
+  inspect((world.get_resource() : StepCount).value, content="1")
+  try! world.step()
+  inspect((world.get_resource() : StepCount).value, content="1")
 }
 
 ///|

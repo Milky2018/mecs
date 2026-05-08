@@ -18,6 +18,7 @@ pub struct CommandSystem {
   func : (World, Commands) -> Unit
 }
 pub fn CommandSystem::CommandSystem((World, Commands) -> Unit, name? : String) -> Self
+pub fn CommandSystem::label(Self) -> SystemLabel
 
 type Commands
 pub fn Commands::despawn(Self, UInt) -> Unit
@@ -50,11 +51,25 @@ pub struct ResourceId {
 pub fn ResourceId::ResourceId(String) -> Self
 pub fn ResourceId::name(Self) -> String
 
+pub(all) enum Stage {
+  Startup
+  Update
+  FixedUpdate
+  Cleanup
+} derive(Eq, @debug.Debug)
+
 pub struct System {
   name : String
   func : (World) -> Unit
 }
 pub fn System::System((World) -> Unit, name? : String) -> Self
+pub fn System::label(Self) -> SystemLabel
+
+pub struct SystemLabel {
+  name : String
+} derive(Eq, Hash, @debug.Debug)
+pub fn SystemLabel::SystemLabel(String) -> Self
+pub fn SystemLabel::name(Self) -> String
 
 pub struct World {
   // private fields
@@ -62,14 +77,19 @@ pub struct World {
 pub fn World::World() -> Self
 pub fn World::add_command_system(Self, CommandSystem) -> Unit
 pub fn World::add_command_system_fn(Self, (Self, Commands) -> Unit, name? : String) -> Unit
+pub fn World::add_command_system_fn_to_stage(Self, Stage, (Self, Commands) -> Unit, name? : String, before? : Array[SystemLabel], after? : Array[SystemLabel], run_if? : (Self) -> Bool) -> Unit
+pub fn World::add_command_system_to_stage(Self, Stage, CommandSystem, before? : Array[SystemLabel], after? : Array[SystemLabel], run_if? : (Self) -> Bool) -> Unit
 pub fn World::add_system(Self, System) -> Unit
 pub fn World::add_system_fn(Self, (Self) -> Unit, name? : String) -> Unit
+pub fn World::add_system_fn_to_stage(Self, Stage, (Self) -> Unit, name? : String, before? : Array[SystemLabel], after? : Array[SystemLabel], run_if? : (Self) -> Bool) -> Unit
+pub fn World::add_system_to_stage(Self, Stage, System, before? : Array[SystemLabel], after? : Array[SystemLabel], run_if? : (Self) -> Bool) -> Unit
 pub fn World::apply_commands(Self, Commands) -> Unit raise NotSpawned
 pub fn World::commands(Self) -> Commands
 pub fn World::despawn(Self, UInt) -> Bool
 pub fn[A : ComponentValue, B : ComponentValue] World::each2(Self, (A, B) -> Unit) -> Unit raise NotSpawned
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::each3(Self, (A, B, C) -> Unit) -> Unit raise NotSpawned
 pub fn World::entity_ops(Self, UInt) -> EntityOps
+pub fn World::fixed_step(Self) -> Unit raise NotSpawned
 pub fn[C : ComponentValue] World::get_component(Self, UInt) -> C?
 pub fn[R : ResourceValue] World::get_resource(Self) -> R
 pub fn[C : ComponentValue] World::has_component(Self, UInt, _hint? : C?) -> Bool
@@ -86,10 +106,12 @@ pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3
 pub fn[C : ComponentValue] World::remove_component(Self, UInt, _hint? : C?) -> Unit
 pub fn[R : ResourceValue] World::remove_resource(Self, _hint? : R?) -> Unit
 pub fn[C : ComponentValue] World::require_component(Self, UInt) -> C
+pub fn World::run_stage(Self, Stage) -> Unit raise NotSpawned
 pub fn[R : ResourceValue] World::set_resource(Self, R) -> Unit
 pub fn World::spawn(Self) -> UInt
 pub fn[B : Bundle] World::spawn_with(Self, B) -> UInt
 pub fn World::step(Self) -> Unit raise NotSpawned
+pub fn World::system_order(Self, stage? : Stage) -> Array[SystemLabel]
 pub fn[R : ResourceValue] World::try_get_resource(Self) -> R?
 
 // Type aliases

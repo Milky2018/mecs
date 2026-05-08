@@ -82,18 +82,18 @@ Acceptance criteria:
 
 Goal: move from a linear system list to a predictable execution model.
 
-- [ ] Add named stages such as startup, update, fixed update, and cleanup.
-- [ ] Add system labels and ordering constraints.
-- [ ] Add optional run conditions.
-- [ ] Decide whether resources can drive scheduling state.
-- [ ] Keep the first scheduler single-threaded and deterministic.
-- [ ] Expose enough metadata for debugging system order.
+- [x] Add named stages such as startup, update, fixed update, and cleanup.
+- [x] Add system labels and ordering constraints.
+- [x] Add optional run conditions.
+- [x] Decide whether resources can drive scheduling state.
+- [x] Keep the first scheduler single-threaded and deterministic.
+- [x] Expose enough metadata for debugging system order.
 
 Acceptance criteria:
 
-- [ ] Users can express common game-loop and simulation schedules.
-- [ ] System order can be inspected in tests or diagnostics.
-- [ ] Scheduler behavior is independent of backend.
+- [x] Users can express common game-loop and simulation schedules.
+- [x] System order can be inspected in tests or diagnostics.
+- [x] Scheduler behavior is independent of backend.
 
 ## Phase 5: Query Coverage
 

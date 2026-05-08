@@ -11,9 +11,27 @@ pub struct CommandSystem {
 }
 
 ///|
-priv enum SystemEntry {
-  DirectSystem(System)
-  DeferredSystem(CommandSystem)
+pub(all) enum Stage {
+  Startup
+  Update
+  FixedUpdate
+  Cleanup
+} derive(Eq, Debug)
+
+///|
+pub struct SystemLabel {
+  name : String
+} derive(Eq, Hash, Debug)
+
+///|
+pub fn SystemLabel::SystemLabel(name : String) -> Self {
+  guard !name.is_empty() else { abort("system label cannot be empty") }
+  { name, }
+}
+
+///|
+pub fn SystemLabel::name(self : Self) -> String {
+  self.name
 }
 
 ///|
@@ -35,9 +53,19 @@ pub fn System::System(
 }
 
 ///|
+pub fn System::label(self : Self) -> SystemLabel {
+  SystemLabel(self.name)
+}
+
+///|
 pub fn CommandSystem::CommandSystem(
   func : (World, Commands) -> Unit,
   name? : String = anonymous_system(),
 ) -> Self {
   { name, func }
+}
+
+///|
+pub fn CommandSystem::label(self : Self) -> SystemLabel {
+  SystemLabel(self.name)
 }

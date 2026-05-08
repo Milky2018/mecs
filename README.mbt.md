@@ -191,3 +191,29 @@ Systems that need deferred structural mutation can be registered with
 `World::add_command_system_fn`. During `World::step`, commands from a command
 system are applied immediately after that system finishes and before the next
 system runs. Direct world mutation APIs remain available for simple use cases.
+
+## Scheduler
+
+Systems are stored in a single-threaded deterministic scheduler. The built-in
+stages are `Startup`, `Update`, `FixedUpdate`, and `Cleanup`. Existing
+`add_system` and `add_command_system` calls register systems in `Update`.
+
+`World::step` runs `Startup` once, then runs `Update` and `Cleanup` every call.
+`World::fixed_step` runs `FixedUpdate` explicitly. `World::run_stage` can run
+any stage directly.
+
+Each system has a label derived from its system name. Use
+`add_system_to_stage`, `add_system_fn_to_stage`,
+`add_command_system_to_stage`, and `add_command_system_fn_to_stage` to choose a
+stage, add `before` or `after` label constraints, or provide a `run_if`
+condition. Run conditions receive `World`, so resources can drive scheduling
+state.
+
+Ordering is resolved inside each stage. `after` requires the referenced label to
+run first when that label exists in the same stage. `before` makes the
+referenced label wait for the current system. Unconstrained systems keep
+registration order. Cycles fall back to registration order for the unresolved
+systems, so execution remains deterministic.
+
+`World::system_order` returns the resolved labels for a stage and is intended
+for tests and debugging.

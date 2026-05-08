@@ -4,7 +4,8 @@ struct World {
   entities : @set.Set[EntityId]
   components : Map[EntityId, Map[ComponentId, Component]]
   resources : Map[ResourceId, Resource]
-  systems : Array[SystemEntry]
+  systems : Array[ScheduledSystem]
+  mut startup_complete : Bool
 }
 
 ///|
@@ -15,6 +16,7 @@ pub fn World::World() -> Self {
     components: {},
     resources: {},
     systems: [],
+    startup_complete: false,
   }
 }
 
@@ -200,7 +202,7 @@ pub fn World::entity_ops(self : Self, entity : EntityId) -> EntityOps {
 
 ///|
 pub fn World::add_system(self : Self, system : System) -> Unit {
-  self.systems.push(DirectSystem(system))
+  self.add_system_to_stage(Update, system)
 }
 
 ///|
@@ -214,7 +216,7 @@ pub fn World::add_system_fn(
 
 ///|
 pub fn World::add_command_system(self : Self, system : CommandSystem) -> Unit {
-  self.systems.push(DeferredSystem(system))
+  self.add_command_system_to_stage(Update, system)
 }
 
 ///|
@@ -228,14 +230,10 @@ pub fn World::add_command_system_fn(
 
 ///|
 pub fn World::step(self : Self) -> Unit raise NotSpawned {
-  for system in self.systems {
-    match system {
-      DirectSystem(system) => (system.func)(self)
-      DeferredSystem(system) => {
-        let commands = self.commands()
-        (system.func)(self, commands)
-        self.apply_commands(commands)
-      }
-    }
+  if !self.startup_complete {
+    self.run_stage(Startup)
+    self.startup_complete = true
   }
+  self.run_stage(Update)
+  self.run_stage(Cleanup)
 }
