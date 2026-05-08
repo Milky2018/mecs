@@ -16,6 +16,11 @@ priv struct BenchHealth {
 }
 
 ///|
+priv struct BenchArmor {
+  value : Int
+}
+
+///|
 priv struct BenchFrame {
   value : Int
 }
@@ -25,6 +30,7 @@ extenum @mecs.Component += {
   BenchPosition(BenchPosition)
   BenchVelocity(BenchVelocity)
   BenchHealth(BenchHealth)
+  BenchArmor(BenchArmor)
 }
 
 ///|
@@ -87,6 +93,24 @@ impl @mecs.ComponentValue for BenchHealth with from_component(component) {
 }
 
 ///|
+impl @mecs.ComponentValue for BenchArmor with component_id() {
+  @mecs.component_id("BenchArmor")
+}
+
+///|
+impl @mecs.ComponentValue for BenchArmor with to_component(self) {
+  BenchArmor(self)
+}
+
+///|
+impl @mecs.ComponentValue for BenchArmor with from_component(component) {
+  match component {
+    BenchArmor(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
 impl @mecs.ResourceValue for BenchFrame with resource_id() {
   @mecs.resource_id("BenchFrame")
 }
@@ -125,6 +149,24 @@ fn build_bench_world(size : Int) -> @mecs.World {
 }
 
 ///|
+fn build_bench_world4(size : Int) -> @mecs.World {
+  let world = @mecs.World()
+  for i in 0..<size {
+    ignore(
+      world.spawn_with(
+        (
+          BenchPosition::{ x: i, y: i },
+          BenchVelocity::{ x: 1, y: -1 },
+          BenchHealth::{ value: i },
+          BenchArmor::{ value: i % 7 },
+        ),
+      ),
+    )
+  }
+  world
+}
+
+///|
 fn build_sparse_bench_world(size : Int, health_stride : Int) -> @mecs.World {
   let world = @mecs.World()
   for i in 0..<size {
@@ -146,6 +188,23 @@ fn checksum_bench_rows(
   for row in rows {
     let (position, velocity, health) = row
     total += position.x + position.y + velocity.x + velocity.y + health.value
+  }
+  total
+}
+
+///|
+fn checksum_bench_quad_rows(
+  rows : Array[(BenchPosition, BenchVelocity, BenchHealth, BenchArmor)],
+) -> Int {
+  let mut total = 0
+  for row in rows {
+    let (position, velocity, health, armor) = row
+    total += position.x +
+      position.y +
+      velocity.x +
+      velocity.y +
+      health.value +
+      armor.value
   }
   total
 }
@@ -276,6 +335,13 @@ test "bench ecs: query" (b : @bench.T) {
       total.val += checksum_bench_row(position, velocity, health)
     })
     b.keep(total.val)
+  })
+  let world4 = build_bench_world4(bench_size)
+  b.bench(name="query4 over 1000 entities", count=100U, fn() {
+    let rows : Array[(BenchPosition, BenchVelocity, BenchHealth, BenchArmor)] = world4
+      .query4()
+      .to_array()
+    b.keep(checksum_bench_quad_rows(rows))
   })
 }
 
