@@ -21,6 +21,11 @@ priv struct BenchArmor {
 }
 
 ///|
+priv struct BenchMana {
+  value : Int
+}
+
+///|
 priv struct BenchFrame {
   value : Int
 }
@@ -31,6 +36,7 @@ extenum @mecs.Component += {
   BenchVelocity(BenchVelocity)
   BenchHealth(BenchHealth)
   BenchArmor(BenchArmor)
+  BenchMana(BenchMana)
 }
 
 ///|
@@ -111,6 +117,24 @@ impl @mecs.ComponentValue for BenchArmor with from_component(component) {
 }
 
 ///|
+impl @mecs.ComponentValue for BenchMana with component_id() {
+  @mecs.component_id("BenchMana")
+}
+
+///|
+impl @mecs.ComponentValue for BenchMana with to_component(self) {
+  BenchMana(self)
+}
+
+///|
+impl @mecs.ComponentValue for BenchMana with from_component(component) {
+  match component {
+    BenchMana(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
 impl @mecs.ResourceValue for BenchFrame with resource_id() {
   @mecs.resource_id("BenchFrame")
 }
@@ -167,6 +191,19 @@ fn build_bench_world4(size : Int) -> @mecs.World {
 }
 
 ///|
+fn build_bench_world5(size : Int) -> @mecs.World {
+  let world = build_bench_world4(size)
+  let rows : Array[(@mecs.EntityId, BenchPosition)] = world
+    .query1_entities()
+    .to_array()
+  for row in rows {
+    let (entity, position) = row
+    try! world.insert_component(entity, BenchMana::{ value: position.x % 11 })
+  }
+  world
+}
+
+///|
 fn build_sparse_bench_world(size : Int, health_stride : Int) -> @mecs.World {
   let world = @mecs.World()
   for i in 0..<size {
@@ -205,6 +242,26 @@ fn checksum_bench_quad_rows(
       velocity.y +
       health.value +
       armor.value
+  }
+  total
+}
+
+///|
+fn checksum_bench_quint_rows(
+  rows : Array[
+    (BenchPosition, BenchVelocity, BenchHealth, BenchArmor, BenchMana),
+  ],
+) -> Int {
+  let mut total = 0
+  for row in rows {
+    let (position, velocity, health, armor, mana) = row
+    total += position.x +
+      position.y +
+      velocity.x +
+      velocity.y +
+      health.value +
+      armor.value +
+      mana.value
   }
   total
 }
@@ -342,6 +399,13 @@ test "bench ecs: query" (b : @bench.T) {
       .query4()
       .to_array()
     b.keep(checksum_bench_quad_rows(rows))
+  })
+  let world5 = build_bench_world5(bench_size)
+  b.bench(name="query5 over 1000 entities", count=100U, fn() {
+    let rows : Array[
+      (BenchPosition, BenchVelocity, BenchHealth, BenchArmor, BenchMana),
+    ] = world5.query5().to_array()
+    b.keep(checksum_bench_quint_rows(rows))
   })
 }
 

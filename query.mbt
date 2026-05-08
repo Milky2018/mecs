@@ -635,13 +635,177 @@ pub fn[
 ] World::query5(
   self : World,
 ) -> Iter[(A, B, C, D, E)] {
-  self
-  .query5_entities()
-  .iter()
-  .map(fn(row) {
-    let (_entity, components) = row
-    components
-  })
+  let a_id = A::component_id()
+  let b_id = B::component_id()
+  let c_id = C::component_id()
+  let d_id = D::component_id()
+  let e_id = E::component_id()
+  let a_len = self.component_store_len(a_id)
+  let b_len = self.component_store_len(b_id)
+  let c_len = self.component_store_len(c_id)
+  let d_len = self.component_store_len(d_id)
+  let e_len = self.component_store_len(e_id)
+  if a_len <= b_len && a_len <= c_len && a_len <= d_len && a_len <= e_len {
+    match self.component_store(a_id) {
+      Some(a_store) => {
+        let it = a_store.iter()
+        let b_store = self.component_store(b_id)
+        let c_store = self.component_store(c_id)
+        let d_store = self.component_store(d_id)
+        let e_store = self.component_store(e_id)
+        Iter::new(fn() -> (A, B, C, D, E)? {
+          for ;; {
+            let row = match it.next() {
+              Some(row) => row
+              None => break None
+            }
+            let (entity, component) = row
+            match
+              (
+                A::from_component(component),
+                component_from_store(b_store, entity),
+                component_from_store(c_store, entity),
+                component_from_store(d_store, entity),
+                component_from_store(e_store, entity),
+              ) {
+              (Some(a), Some(b), Some(c), Some(d), Some(e)) =>
+                break Some((a, b, c, d, e))
+              _ => continue
+            }
+          }
+        })
+      }
+      None => Iter::new(fn() -> (A, B, C, D, E)? { None })
+    }
+  } else if b_len <= c_len && b_len <= d_len && b_len <= e_len {
+    match self.component_store(b_id) {
+      Some(b_store) => {
+        let it = b_store.iter()
+        let a_store = self.component_store(a_id)
+        let c_store = self.component_store(c_id)
+        let d_store = self.component_store(d_id)
+        let e_store = self.component_store(e_id)
+        Iter::new(fn() -> (A, B, C, D, E)? {
+          for ;; {
+            let row = match it.next() {
+              Some(row) => row
+              None => break None
+            }
+            let (entity, component) = row
+            match
+              (
+                component_from_store(a_store, entity),
+                B::from_component(component),
+                component_from_store(c_store, entity),
+                component_from_store(d_store, entity),
+                component_from_store(e_store, entity),
+              ) {
+              (Some(a), Some(b), Some(c), Some(d), Some(e)) =>
+                break Some((a, b, c, d, e))
+              _ => continue
+            }
+          }
+        })
+      }
+      None => Iter::new(fn() -> (A, B, C, D, E)? { None })
+    }
+  } else if c_len <= d_len && c_len <= e_len {
+    match self.component_store(c_id) {
+      Some(c_store) => {
+        let it = c_store.iter()
+        let a_store = self.component_store(a_id)
+        let b_store = self.component_store(b_id)
+        let d_store = self.component_store(d_id)
+        let e_store = self.component_store(e_id)
+        Iter::new(fn() -> (A, B, C, D, E)? {
+          for ;; {
+            let row = match it.next() {
+              Some(row) => row
+              None => break None
+            }
+            let (entity, component) = row
+            match
+              (
+                component_from_store(a_store, entity),
+                component_from_store(b_store, entity),
+                C::from_component(component),
+                component_from_store(d_store, entity),
+                component_from_store(e_store, entity),
+              ) {
+              (Some(a), Some(b), Some(c), Some(d), Some(e)) =>
+                break Some((a, b, c, d, e))
+              _ => continue
+            }
+          }
+        })
+      }
+      None => Iter::new(fn() -> (A, B, C, D, E)? { None })
+    }
+  } else if d_len <= e_len {
+    match self.component_store(d_id) {
+      Some(d_store) => {
+        let it = d_store.iter()
+        let a_store = self.component_store(a_id)
+        let b_store = self.component_store(b_id)
+        let c_store = self.component_store(c_id)
+        let e_store = self.component_store(e_id)
+        Iter::new(fn() -> (A, B, C, D, E)? {
+          for ;; {
+            let row = match it.next() {
+              Some(row) => row
+              None => break None
+            }
+            let (entity, component) = row
+            match
+              (
+                component_from_store(a_store, entity),
+                component_from_store(b_store, entity),
+                component_from_store(c_store, entity),
+                D::from_component(component),
+                component_from_store(e_store, entity),
+              ) {
+              (Some(a), Some(b), Some(c), Some(d), Some(e)) =>
+                break Some((a, b, c, d, e))
+              _ => continue
+            }
+          }
+        })
+      }
+      None => Iter::new(fn() -> (A, B, C, D, E)? { None })
+    }
+  } else {
+    match self.component_store(e_id) {
+      Some(e_store) => {
+        let it = e_store.iter()
+        let a_store = self.component_store(a_id)
+        let b_store = self.component_store(b_id)
+        let c_store = self.component_store(c_id)
+        let d_store = self.component_store(d_id)
+        Iter::new(fn() -> (A, B, C, D, E)? {
+          for ;; {
+            let row = match it.next() {
+              Some(row) => row
+              None => break None
+            }
+            let (entity, component) = row
+            match
+              (
+                component_from_store(a_store, entity),
+                component_from_store(b_store, entity),
+                component_from_store(c_store, entity),
+                component_from_store(d_store, entity),
+                E::from_component(component),
+              ) {
+              (Some(a), Some(b), Some(c), Some(d), Some(e)) =>
+                break Some((a, b, c, d, e))
+              _ => continue
+            }
+          }
+        })
+      }
+      None => Iter::new(fn() -> (A, B, C, D, E)? { None })
+    }
+  }
 }
 
 ///|

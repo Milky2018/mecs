@@ -29,6 +29,7 @@ The baseline ECS benchmark suite lives in `mecs_bench_test.mbt` and covers:
 - `for_each2` over 1000 entities
 - `query3` over 1000 entities
 - `query4` over 1000 entities
+- `query5` over 1000 entities
 - sparse `query3` over 1000 entities with one matching component on one in four
   entities
 - setting, getting, and removing one resource 1000 times
@@ -67,17 +68,17 @@ Recorded on 2026-05-08 with:
 moon bench --target native --release
 ```
 
-| Storage | Spawn 1000 | Despawn 1000 | Insert 1000 | Remove 1000 | Query1 1000 | Dense Query2 1000 | Dense for_each2 1000 | Dense Query3 1000 | Dense for_each3 1000 | Dense Query4 1000 | Sparse Query3 1000 | Sparse for_each3 1000 | Resource 1000 |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Original nested maps | 118.21 us | 163.29 us | 196.04 us | 480.26 us | N/A | N/A | N/A | 181.69 us | N/A | N/A | N/A | N/A | 107.25 us |
-| HashMap component columns + direct probes | 103.54 us | 152.07 us | 242.69 us | 606.82 us | 16.25 us | 36.55 us | 17.25 us | 48.88 us | 29.53 us | 63.92 us | 12.75 us | 6.82 us | 110.39 us |
+| Storage | Spawn 1000 | Despawn 1000 | Insert 1000 | Remove 1000 | Query1 1000 | Dense Query2 1000 | Dense for_each2 1000 | Dense Query3 1000 | Dense for_each3 1000 | Dense Query4 1000 | Dense Query5 1000 | Sparse Query3 1000 | Sparse for_each3 1000 | Resource 1000 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Original nested maps | 118.21 us | 163.29 us | 196.04 us | 480.26 us | N/A | N/A | N/A | 181.69 us | N/A | N/A | N/A | N/A | N/A | 107.25 us |
+| HashMap component columns + direct probes | 104.36 us | 154.09 us | 240.54 us | 608.10 us | 16.04 us | 36.43 us | 17.08 us | 49.12 us | 29.81 us | 62.83 us | 75.88 us | 12.58 us | 6.71 us | 105.38 us |
 
 The current storage is query-oriented. Dense `query3` is about 30% faster on
 native from the column-store layout alone, and direct cached store probes bring
 the measured dense `query3` to about three times faster than the original nested
 map baseline. Sparse `query3` can drive from the smallest component column and
-avoid repeated component-id/store lookup work. `query2`, `query3`, and `query4`
-bypass the entity-returning row iterator when entity ids are not requested.
+avoid repeated component-id/store lookup work. `query2`, `query3`, `query4`,
+and `query5` bypass the entity-returning row iterator when entity ids are not requested.
 `query1` also drives directly from its component store instead of mapping over
 `query1_entities` and discarding entity ids. `for_each3` avoids the result array
 allocation used by `query3().to_array()` and drives directly from the selected
@@ -177,8 +178,9 @@ component id in its own `@hashmap.HashMap[EntityId, Component]`:
   component tables.
 - Query iterators cache the chosen component stores and probe them directly
   instead of calling `World::get_component` for each candidate entity.
-- `query2`, `query3`, and `query4` have direct value iterators so they do not build
-  `Iter2[EntityId, (...)]` rows when callers do not need entity ids.
+- `query2`, `query3`, `query4`, and `query5` have direct value iterators so
+  they do not build `Iter2[EntityId, (...)]` rows when callers do not need
+  entity ids.
 - `query1` has a direct value iterator so it does not build
   `Iter2[EntityId, C]` rows when callers do not need entity ids.
 - `for_each2` and `for_each3` provide streaming traversal when callers do not
