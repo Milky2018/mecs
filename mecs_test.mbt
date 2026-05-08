@@ -16,6 +16,16 @@ priv struct Health {
 }
 
 ///|
+priv struct Mana {
+  value : Int
+}
+
+///|
+priv struct Armor {
+  value : Int
+}
+
+///|
 priv struct StepCount {
   value : Int
 }
@@ -35,6 +45,8 @@ extenum @mecs.Component += {
   Position(Position)
   Velocity(Velocity)
   Health(Health)
+  Mana(Mana)
+  Armor(Armor)
   PositionAlias(PositionAlias)
 }
 
@@ -94,6 +106,42 @@ impl @mecs.ComponentValue for Health with to_component(self) {
 impl @mecs.ComponentValue for Health with from_component(component) {
   match component {
     Health(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+impl @mecs.ComponentValue for Mana with component_id() {
+  ComponentId("Mana")
+}
+
+///|
+impl @mecs.ComponentValue for Mana with to_component(self) {
+  Mana(self)
+}
+
+///|
+impl @mecs.ComponentValue for Mana with from_component(component) {
+  match component {
+    Mana(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+impl @mecs.ComponentValue for Armor with component_id() {
+  ComponentId("Armor")
+}
+
+///|
+impl @mecs.ComponentValue for Armor with to_component(self) {
+  Armor(self)
+}
+
+///|
+impl @mecs.ComponentValue for Armor with from_component(component) {
+  match component {
+    Armor(value) => Some(value)
     _ => None
   }
 }
@@ -484,6 +532,73 @@ test "query3 only yields entities with all requested components" {
   let (entity, (pos, vel, hp)) = rows[0]
   inspect(entity == complete, content="true")
   inspect((pos.x, pos.y, vel.x, vel.y, hp.value), content="(0, 0, 1, 2, 7)")
+}
+
+///|
+test "query4 and query5 yield consistent entity rows" {
+  let world = @mecs.World()
+  let complete5 = world.spawn_with(
+    (
+      Position::{ x: 1, y: 2 },
+      Velocity::{ x: 3, y: 4 },
+      Health::{ value: 5 },
+      Mana::{ value: 6 },
+    ),
+  )
+  try! world.insert_component(complete5, Armor::{ value: 7 })
+  let complete4 = world.spawn_with(
+    (
+      Position::{ x: 8, y: 9 },
+      Velocity::{ x: 10, y: 11 },
+      Health::{ value: 12 },
+      Mana::{ value: 13 },
+    ),
+  )
+  let partial = world.spawn_with(
+    (Position::{ x: 14, y: 15 }, Velocity::{ x: 16, y: 17 }),
+  )
+  ignore(partial)
+  let rows4 : Array[(@mecs.EntityId, (Position, Velocity, Health, Mana))] = world
+    .query4_entities()
+    .to_array()
+  let rows5 : Array[(Position, Velocity, Health, Mana, Armor)] = world
+    .query()
+    .to_array()
+  let rows5_entities : Array[
+    (@mecs.EntityId, (Position, Velocity, Health, Mana, Armor)),
+  ] = world.query5_entities().to_array()
+  inspect(rows4.length(), content="2")
+  inspect(rows5.length(), content="1")
+  inspect(rows5_entities.length(), content="1")
+  inspect(rows5_entities[0].0 == complete5, content="true")
+  let complete4_mana = Ref(-1)
+  for row in rows4 {
+    let (entity4, (_pos4, _vel4, _hp4, mana4)) = row
+    if entity4 == complete4 {
+      complete4_mana.val = mana4.value
+    }
+  }
+  inspect(complete4_mana.val, content="13")
+  let (pos5, vel5, hp5, mana5, armor5) = rows5[0]
+  inspect(
+    (pos5.x, pos5.y, vel5.x, vel5.y, hp5.value, mana5.value, armor5.value),
+    content="(1, 2, 3, 4, 5, 6, 7)",
+  )
+}
+
+///|
+test "duplicate component types in queries are repeated reads" {
+  let world = @mecs.World()
+  let entity = world.spawn_with(
+    (Position::{ x: 3, y: 4 }, Velocity::{ x: 0, y: 0 }),
+  )
+  let rows : Array[(@mecs.EntityId, (Position, Position))] = world
+    .query2_entities()
+    .to_array()
+  inspect(rows.length(), content="1")
+  let (row_entity, (first, second)) = rows[0]
+  inspect(row_entity == entity, content="true")
+  inspect((first.x, first.y, second.x, second.y), content="(3, 4, 3, 4)")
 }
 
 ///|

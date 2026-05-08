@@ -99,19 +99,19 @@ Acceptance criteria:
 
 Goal: broaden query expressiveness without making the core brittle.
 
-- [ ] Refactor query internals so adding more arities is mechanical.
-- [ ] Add `query4` and `query5` first.
-- [ ] Add entity-returning versions as `Iter2[EntityId, (...)]`.
-- [ ] Consider optional filters such as `with`, `without`, and entity-only
+- [x] Refactor query internals so adding more arities is mechanical.
+- [x] Add `query4` and `query5` first.
+- [x] Add entity-returning versions as `Iter2[EntityId, (...)]`.
+- [x] Consider optional filters such as `with`, `without`, and entity-only
       queries.
-- [ ] Add tests for duplicate component types in a query and document whether
+- [x] Add tests for duplicate component types in a query and document whether
       they are rejected or treated as repeated reads.
 
 Acceptance criteria:
 
-- [ ] Common multi-component systems do not need custom query code.
-- [ ] Query return shapes stay consistent across arities.
-- [ ] Query implementation remains small enough to audit.
+- [x] Common multi-component systems do not need custom query code.
+- [x] Query return shapes stay consistent across arities.
+- [x] Query implementation remains small enough to audit.
 
 ## Phase 6: Error Model
 

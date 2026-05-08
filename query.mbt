@@ -20,6 +20,27 @@ pub impl[A : ComponentValue, B : ComponentValue, C : ComponentValue] Query for (
 }
 
 ///|
+pub impl[
+  A : ComponentValue,
+  B : ComponentValue,
+  C : ComponentValue,
+  D : ComponentValue,
+] Query for (A, B, C, D) with iter(world : World) {
+  world.query4()
+}
+
+///|
+pub impl[
+  A : ComponentValue,
+  B : ComponentValue,
+  C : ComponentValue,
+  D : ComponentValue,
+  E : ComponentValue,
+] Query for (A, B, C, D, E) with iter(world : World) {
+  world.query5()
+}
+
+///|
 pub fn[Q : Query] World::query(self : World) -> Iter[Q] {
   Q::iter(self)
 }
@@ -108,15 +129,101 @@ pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3_entities(
   self : World,
 ) -> Iter2[EntityId, (A, B, C)] {
-  let it = self.query1_entities()
+  let it = self.query2_entities()
   Iter2::new(fn() -> (EntityId, (A, B, C))? {
     for ;; {
       match it.next() {
         None => break None
-        Some((entity, a)) =>
-          match (self.get_component(entity), self.get_component(entity)) {
-            (Some(b), Some(c)) => break Some((entity, (a, b, c)))
-            _ => continue
+        Some((entity, (a, b))) =>
+          match self.get_component(entity) {
+            Some(c) => break Some((entity, (a, b, c)))
+            None => continue
+          }
+      }
+    }
+  })
+}
+
+///|
+pub fn[
+  A : ComponentValue,
+  B : ComponentValue,
+  C : ComponentValue,
+  D : ComponentValue,
+] World::query4(
+  self : World,
+) -> Iter[(A, B, C, D)] {
+  self
+  .query4_entities()
+  .iter()
+  .map(fn(row) {
+    let (_entity, components) = row
+    components
+  })
+}
+
+///|
+pub fn[
+  A : ComponentValue,
+  B : ComponentValue,
+  C : ComponentValue,
+  D : ComponentValue,
+] World::query4_entities(
+  self : World,
+) -> Iter2[EntityId, (A, B, C, D)] {
+  let it = self.query3_entities()
+  Iter2::new(fn() -> (EntityId, (A, B, C, D))? {
+    for ;; {
+      match it.next() {
+        None => break None
+        Some((entity, (a, b, c))) =>
+          match self.get_component(entity) {
+            Some(d) => break Some((entity, (a, b, c, d)))
+            None => continue
+          }
+      }
+    }
+  })
+}
+
+///|
+pub fn[
+  A : ComponentValue,
+  B : ComponentValue,
+  C : ComponentValue,
+  D : ComponentValue,
+  E : ComponentValue,
+] World::query5(
+  self : World,
+) -> Iter[(A, B, C, D, E)] {
+  self
+  .query5_entities()
+  .iter()
+  .map(fn(row) {
+    let (_entity, components) = row
+    components
+  })
+}
+
+///|
+pub fn[
+  A : ComponentValue,
+  B : ComponentValue,
+  C : ComponentValue,
+  D : ComponentValue,
+  E : ComponentValue,
+] World::query5_entities(
+  self : World,
+) -> Iter2[EntityId, (A, B, C, D, E)] {
+  let it = self.query4_entities()
+  Iter2::new(fn() -> (EntityId, (A, B, C, D, E))? {
+    for ;; {
+      match it.next() {
+        None => break None
+        Some((entity, (a, b, c, d))) =>
+          match self.get_component(entity) {
+            Some(e) => break Some((entity, (a, b, c, d, e)))
+            None => continue
           }
       }
     }

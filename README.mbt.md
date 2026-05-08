@@ -148,9 +148,10 @@ the target entity has not been spawned or has already been despawned, they raise
 
 ## Mutation Semantics
 
-`query1`, `query2`, `query3`, and their `queryN_entities` variants are lazy read
+`query1` through `query5`, and their `queryN_entities` variants, are lazy read
 queries. They yield component values from the world and do not write changes
-back by themselves.
+back by themselves. Entity-returning query variants consistently return
+`Iter2[EntityId, (...)]`, with `query1_entities` returning `Iter2[EntityId, C]`.
 
 `each2` and `each3` are the supported mutating query helpers. They first
 materialize the matching rows, then call the user callback for each row, then
@@ -162,6 +163,15 @@ callback are not visited by that same `eachN` call. Non-queried components can b
 inserted or removed during the callback and those structural changes persist.
 If the yielded entity itself is despawned before `eachN` writes components back,
 `eachN` raises `NotSpawned(entity)`.
+
+Duplicate component types in a query are allowed and are treated as repeated
+typed reads from the same entity component slot. For example,
+`query2_entities[Position, Position]` yields two `Position` values read from the
+same stored `Position` component.
+
+Optional `with`, `without`, and entity-only query filters are not part of the
+current query API. Keep those filters explicit in system code until the filter
+model is added.
 
 Prefer command buffers for structural changes requested from systems. If direct
 world mutation changes the same queried component slots inside an `eachN`
