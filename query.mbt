@@ -88,13 +88,25 @@ fn[C : ComponentValue] component_from_store(
 
 ///|
 pub fn[C : ComponentValue] World::query1(self : World) -> Iter[C] {
-  self
-  .query1_entities()
-  .iter()
-  .map(fn(row) {
-    let (_entity, component) = row
-    component
-  })
+  match self.component_store(C::component_id()) {
+    Some(store) => {
+      let it = store.iter()
+      Iter::new(fn() -> C? {
+        for ;; {
+          let row = match it.next() {
+            Some(row) => row
+            None => break None
+          }
+          let (_entity, component) = row
+          match C::from_component(component) {
+            Some(value) => break Some(value)
+            None => continue
+          }
+        }
+      })
+    }
+    None => Iter::new(fn() -> C? { None })
+  }
 }
 
 ///|

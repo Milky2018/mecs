@@ -218,6 +218,14 @@ test "bench ecs: remove component" (b : @bench.T) {
 ///|
 test "bench ecs: query" (b : @bench.T) {
   let world = build_bench_world(bench_size)
+  b.bench(name="query1 over 1000 entities", count=100U, fn() {
+    let rows : Array[BenchPosition] = world.query1().to_array()
+    let mut total = 0
+    for position in rows {
+      total += position.x + position.y
+    }
+    b.keep(total)
+  })
   b.bench(name="query3 over 1000 entities", count=100U, fn() {
     let rows : Array[(BenchPosition, BenchVelocity, BenchHealth)] = world
       .query3()

@@ -24,6 +24,7 @@ The baseline ECS benchmark suite lives in `mecs_bench_test.mbt` and covers:
 - despawning 1000 entities
 - inserting 1000 components
 - removing 1000 components
+- `query1` over 1000 entities
 - `query3` over 1000 entities
 - sparse `query3` over 1000 entities with one matching component on one in four
   entities
@@ -63,19 +64,21 @@ Recorded on 2026-05-08 with:
 moon bench --target native --release
 ```
 
-| Storage | Spawn 1000 | Despawn 1000 | Insert 1000 | Remove 1000 | Dense Query3 1000 | Dense for_each3 1000 | Sparse Query3 1000 | Sparse for_each3 1000 | Resource 1000 |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Original nested maps | 118.21 us | 163.29 us | 196.04 us | 480.26 us | 181.69 us | N/A | N/A | N/A | 107.25 us |
-| HashMap component columns + direct probes | 107.65 us | 154.38 us | 249.38 us | 608.44 us | 48.79 us | 29.72 us | 12.63 us | 6.91 us | 106.33 us |
+| Storage | Spawn 1000 | Despawn 1000 | Insert 1000 | Remove 1000 | Query1 1000 | Dense Query3 1000 | Dense for_each3 1000 | Sparse Query3 1000 | Sparse for_each3 1000 | Resource 1000 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Original nested maps | 118.21 us | 163.29 us | 196.04 us | 480.26 us | N/A | 181.69 us | N/A | N/A | N/A | 107.25 us |
+| HashMap component columns + direct probes | 103.15 us | 151.00 us | 242.09 us | 615.02 us | 16.36 us | 50.41 us | 30.27 us | 12.63 us | 6.81 us | 106.71 us |
 
 The current storage is query-oriented. Dense `query3` is about 30% faster on
 native from the column-store layout alone, and direct cached store probes bring
 the measured dense `query3` to about three times faster than the original nested
 map baseline. Sparse `query3` can drive from the smallest component column and
 avoid repeated component-id/store lookup work. `query2` and `query3` bypass the
-entity-returning row iterator when entity ids are not requested. `for_each3`
-avoids the result array allocation used by `query3().to_array()` and drives
-directly from the selected component store, bypassing the row iterator path.
+entity-returning row iterator when entity ids are not requested. `query1` also
+drives directly from its component store instead of mapping over
+`query1_entities` and discarding entity ids. `for_each3` avoids the result array
+allocation used by `query3().to_array()` and drives directly from the selected
+component store, bypassing the row iterator path.
 Insert and remove are slower because writes maintain both the entity
 component-id list and the component column. The remove benchmark also includes
 world construction, so it captures part of the insertion cost.
@@ -173,6 +176,8 @@ component id in its own `@hashmap.HashMap[EntityId, Component]`:
   instead of calling `World::get_component` for each candidate entity.
 - `query2` and `query3` have direct value iterators so they do not build
   `Iter2[EntityId, (...)]` rows when callers do not need entity ids.
+- `query1` has a direct value iterator so it does not build
+  `Iter2[EntityId, C]` rows when callers do not need entity ids.
 - `for_each2` and `for_each3` provide streaming traversal when callers do not
   need an allocated result array, and drive directly from the chosen component
   store instead of consuming `queryN_entities`.
