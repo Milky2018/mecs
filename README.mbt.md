@@ -150,7 +150,8 @@ the same slot, and typed reads for the other variant return `None`.
 
 See [docs/ergonomics.md](/docs/ergonomics.md) for copyable component and
 resource templates, and [docs/migration.md](/docs/migration.md) for migration
-notes from the earlier experimental designs.
+notes from the earlier experimental designs. Performance benchmarks and storage
+tradeoffs are tracked in [docs/performance.md](/docs/performance.md).
 
 ## Insert Failures
 

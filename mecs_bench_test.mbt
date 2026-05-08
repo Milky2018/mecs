@@ -1,0 +1,217 @@
+///|
+priv struct BenchPosition {
+  x : Int
+  y : Int
+}
+
+///|
+priv struct BenchVelocity {
+  x : Int
+  y : Int
+}
+
+///|
+priv struct BenchHealth {
+  value : Int
+}
+
+///|
+priv struct BenchFrame {
+  value : Int
+}
+
+///|
+extenum @mecs.Component += {
+  BenchPosition(BenchPosition)
+  BenchVelocity(BenchVelocity)
+  BenchHealth(BenchHealth)
+}
+
+///|
+extenum @mecs.Resource += {
+  BenchFrame(BenchFrame)
+}
+
+///|
+impl @mecs.ComponentValue for BenchPosition with component_id() {
+  @mecs.component_id("BenchPosition")
+}
+
+///|
+impl @mecs.ComponentValue for BenchPosition with to_component(self) {
+  BenchPosition(self)
+}
+
+///|
+impl @mecs.ComponentValue for BenchPosition with from_component(component) {
+  match component {
+    BenchPosition(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+impl @mecs.ComponentValue for BenchVelocity with component_id() {
+  @mecs.component_id("BenchVelocity")
+}
+
+///|
+impl @mecs.ComponentValue for BenchVelocity with to_component(self) {
+  BenchVelocity(self)
+}
+
+///|
+impl @mecs.ComponentValue for BenchVelocity with from_component(component) {
+  match component {
+    BenchVelocity(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+impl @mecs.ComponentValue for BenchHealth with component_id() {
+  @mecs.component_id("BenchHealth")
+}
+
+///|
+impl @mecs.ComponentValue for BenchHealth with to_component(self) {
+  BenchHealth(self)
+}
+
+///|
+impl @mecs.ComponentValue for BenchHealth with from_component(component) {
+  match component {
+    BenchHealth(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+impl @mecs.ResourceValue for BenchFrame with resource_id() {
+  @mecs.resource_id("BenchFrame")
+}
+
+///|
+impl @mecs.ResourceValue for BenchFrame with to_resource(self) {
+  BenchFrame(self)
+}
+
+///|
+impl @mecs.ResourceValue for BenchFrame with from_resource(resource) {
+  match resource {
+    BenchFrame(value) => Some(value)
+    _ => None
+  }
+}
+
+///|
+let bench_size : Int = 1000
+
+///|
+fn build_bench_world(size : Int) -> @mecs.World {
+  let world = @mecs.World()
+  for i in 0..<size {
+    ignore(
+      world.spawn_with(
+        (
+          BenchPosition::{ x: i, y: i },
+          BenchVelocity::{ x: 1, y: -1 },
+          BenchHealth::{ value: i },
+        ),
+      ),
+    )
+  }
+  world
+}
+
+///|
+fn checksum_bench_rows(
+  rows : Array[(BenchPosition, BenchVelocity, BenchHealth)],
+) -> Int {
+  let mut total = 0
+  for row in rows {
+    let (position, velocity, health) = row
+    total += position.x + position.y + velocity.x + velocity.y + health.value
+  }
+  total
+}
+
+///|
+test "bench ecs: spawn" (b : @bench.T) {
+  b.bench(name="spawn 1000 entities", count=20U, fn() {
+    let world = @mecs.World()
+    for _ in 0..<bench_size {
+      ignore(world.spawn())
+    }
+    b.keep(world)
+  })
+}
+
+///|
+test "bench ecs: despawn" (b : @bench.T) {
+  b.bench(name="despawn 1000 entities", count=20U, fn() {
+    let world = @mecs.World()
+    let entities : Array[@mecs.EntityId] = []
+    for _ in 0..<bench_size {
+      entities.push(world.spawn())
+    }
+    for entity in entities {
+      ignore(world.despawn(entity))
+    }
+    b.keep(world)
+  })
+}
+
+///|
+test "bench ecs: insert component" (b : @bench.T) {
+  b.bench(name="insert 1000 components", count=20U, fn() {
+    let world = @mecs.World()
+    let entities : Array[@mecs.EntityId] = []
+    for i in 0..<bench_size {
+      let entity = world.spawn()
+      entities.push(entity)
+      try! world.insert_component(entity, BenchPosition::{ x: i, y: -i })
+    }
+    b.keep(world)
+  })
+}
+
+///|
+test "bench ecs: remove component" (b : @bench.T) {
+  b.bench(name="remove 1000 components", count=20U, fn() {
+    let world = build_bench_world(bench_size)
+    let rows : Array[(@mecs.EntityId, BenchPosition)] = world
+      .query1_entities()
+      .to_array()
+    for row in rows {
+      let (entity, position) = row
+      b.keep(position.x + position.y)
+      world.remove_component(entity, _hint=(None : BenchPosition?))
+    }
+    b.keep(world)
+  })
+}
+
+///|
+test "bench ecs: query" (b : @bench.T) {
+  let world = build_bench_world(bench_size)
+  b.bench(name="query3 over 1000 entities", count=100U, fn() {
+    let rows : Array[(BenchPosition, BenchVelocity, BenchHealth)] = world
+      .query3()
+      .to_array()
+    b.keep(checksum_bench_rows(rows))
+  })
+}
+
+///|
+test "bench ecs: resources" (b : @bench.T) {
+  b.bench(name="set/get/remove resource 1000 times", count=50U, fn() {
+    let world = @mecs.World()
+    for i in 0..<bench_size {
+      world.set_resource(BenchFrame::{ value: i })
+      let frame : BenchFrame = world.get_resource()
+      b.keep(frame.value)
+      world.remove_resource(_hint=(None : BenchFrame?))
+    }
+  })
+}

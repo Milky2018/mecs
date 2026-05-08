@@ -154,19 +154,36 @@ Acceptance criteria:
 
 Goal: understand and improve runtime cost without sacrificing portability.
 
-- [ ] Add microbenchmarks for spawn, despawn, insert, remove, query, and
+- [x] Add microbenchmarks for spawn, despawn, insert, remove, query, and
       resources.
-- [ ] Measure the cost of map-based component storage.
-- [ ] Evaluate per-component sparse storage while retaining extensible-enum
+- [x] Measure the cost of map-based component storage.
+- [x] Evaluate per-component sparse storage while retaining extensible-enum
       values.
-- [ ] Avoid optimizing before query and mutation semantics are stable.
-- [ ] Track performance across wasm, wasm-gc, js, and native targets.
+- [x] Avoid optimizing before query and mutation semantics are stable.
+- [x] Track performance across wasm, wasm-gc, js, and native targets.
 
 Acceptance criteria:
 
-- [ ] Baseline performance is measured and repeatable.
-- [ ] Any storage refactor preserves the public type-safe API.
-- [ ] Performance-sensitive tradeoffs are documented.
+- [x] Baseline performance is measured and repeatable.
+- [x] Any storage refactor preserves the public type-safe API.
+- [x] Performance-sensitive tradeoffs are documented.
+
+Optimization backlog:
+
+- [ ] Prototype per-component sparse storage behind the existing public API:
+      `Map[ComponentId, Map[EntityId, Component]]` or a sparse-set-like table.
+- [ ] Make queries iterate the smallest matching component table instead of
+      scanning every entity map.
+- [ ] Add component-count metadata so wide queries can choose the cheapest
+      driving component deterministically.
+- [ ] Improve component removal by going directly to component-id storage when
+      sparse storage exists.
+- [ ] Evaluate despawn bookkeeping strategies for sparse storage: eager removal
+      from every component table versus tombstones plus periodic compaction.
+- [ ] Preserve current `ComponentValue` / `ResourceValue` conversion and
+      `EcsError` mismatch behavior during any storage refactor.
+- [ ] Keep benchmarks as the acceptance gate: require before/after numbers for
+      spawn, despawn, insert, remove, query, and resources on all stable targets.
 
 ## Phase 9: Release Readiness
 
