@@ -132,8 +132,8 @@ pub fn[A : ComponentValue, B : ComponentValue] World::each2(
   for row in rows {
     let (entity, (a, b)) = row
     f(a, b)
-    ignore(self.insert_component(entity, a))
-    ignore(self.insert_component(entity, b))
+    try! self.insert_component(entity, a)
+    try! self.insert_component(entity, b)
   }
 }
 
@@ -146,8 +146,8 @@ pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::each3(
   for row in rows {
     let (entity, (a, b, c)) = row
     f(a, b, c)
-    ignore(self.insert_component(entity, a))
-    ignore(self.insert_component(entity, b))
-    ignore(self.insert_component(entity, c))
+    try! self.insert_component(entity, a)
+    try! self.insert_component(entity, b)
+    try! self.insert_component(entity, c)
   }
 }

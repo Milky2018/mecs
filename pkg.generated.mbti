@@ -8,6 +8,9 @@ import {
 // Values
 
 // Errors
+pub suberror NotSpawned {
+  NotSpawned(UInt)
+}
 
 // Types and methods
 pub extenum Component {
@@ -21,7 +24,7 @@ pub fn ComponentId::name(Self) -> String
 
 type EntityOps
 pub fn EntityOps::despawn(Self) -> Bool
-pub fn[C : ComponentValue] EntityOps::insert_component(Self, C) -> Bool
+pub fn[C : ComponentValue] EntityOps::insert_component(Self, C) -> Unit raise NotSpawned
 pub fn[C : ComponentValue] EntityOps::remove_component(Self) -> Unit
 
 pub extenum Resource {
@@ -53,7 +56,7 @@ pub fn[C : ComponentValue] World::get_component(Self, UInt) -> C?
 pub fn[R : ResourceValue] World::get_resource(Self) -> R
 pub fn[C : ComponentValue] World::has_component(Self, UInt, _hint? : C?) -> Bool
 pub fn[R : ResourceValue] World::has_resource(Self, _hint? : R?) -> Bool
-pub fn[C : ComponentValue] World::insert_component(Self, UInt, C) -> Bool
+pub fn[C : ComponentValue] World::insert_component(Self, UInt, C) -> Unit raise NotSpawned
 pub fn World::is_alive(Self, UInt) -> Bool
 pub fn[Q : Query] World::query(Self) -> Iter[Q]
 pub fn[C : ComponentValue] World::query1(Self) -> Iter[C]

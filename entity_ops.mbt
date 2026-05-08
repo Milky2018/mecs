@@ -8,7 +8,7 @@ struct EntityOps {
 pub fn[C : ComponentValue] EntityOps::insert_component(
   self : Self,
   component : C,
-) -> Bool {
+) -> Unit raise NotSpawned {
   self.world.insert_component(self.entity, component)
 }
 

@@ -136,3 +136,9 @@ extensible enum value into that slot. `from_component` and `from_resource`
 verify that the stored enum variant really belongs to the requested type. If two
 types intentionally or accidentally use the same id, the newer value overwrites
 the same slot, and typed reads for the other variant return `None`.
+
+## Insert Failures
+
+`World::insert_component` and `EntityOps::insert_component` return `Unit`. If
+the target entity has not been spawned or has already been despawned, they raise
+`NotSpawned(entity)`.

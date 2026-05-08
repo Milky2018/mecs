@@ -10,8 +10,8 @@ pub impl[A : ComponentValue, B : ComponentValue] Bundle for (A, B) with insert_i
   entity : EntityId,
 ) {
   let (a, b) = bundle
-  ignore(world.insert_component(entity, a))
-  ignore(world.insert_component(entity, b))
+  try! world.insert_component(entity, a)
+  try! world.insert_component(entity, b)
 }
 
 ///|
@@ -21,9 +21,9 @@ pub impl[A : ComponentValue, B : ComponentValue, C : ComponentValue] Bundle for 
   C,
 ) with insert_into(bundle : (A, B, C), world : World, entity : EntityId) {
   let (a, b, c) = bundle
-  ignore(world.insert_component(entity, a))
-  ignore(world.insert_component(entity, b))
-  ignore(world.insert_component(entity, c))
+  try! world.insert_component(entity, a)
+  try! world.insert_component(entity, b)
+  try! world.insert_component(entity, c)
 }
 
 ///|
@@ -38,8 +38,8 @@ pub impl[
   entity : EntityId,
 ) {
   let (a, b, c, d) = bundle
-  ignore(world.insert_component(entity, a))
-  ignore(world.insert_component(entity, b))
-  ignore(world.insert_component(entity, c))
-  ignore(world.insert_component(entity, d))
+  try! world.insert_component(entity, a)
+  try! world.insert_component(entity, b)
+  try! world.insert_component(entity, c)
+  try! world.insert_component(entity, d)
 }

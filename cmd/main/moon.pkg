@@ -1,7 +1,0 @@
-// import {
-//   "username/mecs" @lib,
-// }
-
-options(
-  "is-main": true,
-)

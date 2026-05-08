@@ -249,8 +249,8 @@ test "entity ops can dynamically add components" {
   let world = @mecs.World()
   let entity = world.spawn()
   let ops = world.entity_ops(entity)
-  inspect(ops.insert_component(Position::{ x: 1, y: 2 }), content="true")
-  inspect(ops.insert_component(Velocity::{ x: 3, y: 4 }), content="true")
+  try! ops.insert_component(Position::{ x: 1, y: 2 })
+  try! ops.insert_component(Velocity::{ x: 3, y: 4 })
   let rows : Array[(Velocity, Position)] = world.query().to_array()
   inspect(rows.length(), content="1")
   let (vel, pos) = rows[0]
@@ -261,7 +261,14 @@ test "entity ops can dynamically add components" {
 test "entity ops insert reports dead entity failure" {
   let world = @mecs.World()
   let ops = world.entity_ops(99)
-  inspect(ops.insert_component(Position::{ x: 0, y: 0 }), content="false")
+  let result = try? ops.insert_component(Position::{ x: 0, y: 0 })
+  inspect(
+    match result {
+      Err(NotSpawned(entity)) => entity == 99
+      _ => false
+    },
+    content="true",
+  )
 }
 
 ///|
@@ -280,7 +287,7 @@ test "component id collision overwrites one storage slot" {
   )
   inspect(has_position(world, entity), content="true")
   inspect(has_position_alias(world, entity), content="false")
-  ignore(world.insert_component(entity, PositionAlias::{ value: 42 }))
+  try! world.insert_component(entity, PositionAlias::{ value: 42 })
   let position : Position? = world.get_component(entity)
   let alias_pos : PositionAlias? = world.get_component(entity)
   inspect(position is Some(_), content="false")
@@ -319,10 +326,17 @@ test "resource id collision overwrites one storage slot" {
 }
 
 ///|
-test "missing entity component and resource APIs are safe by default" {
+test "missing entity reads are safe and insert reports not spawned" {
   let world = @mecs.World()
   inspect(world.is_alive(99), content="false")
-  inspect(world.insert_component(99, Position::{ x: 1, y: 1 }), content="false")
+  let result = try? world.insert_component(99, Position::{ x: 1, y: 1 })
+  inspect(
+    match result {
+      Err(NotSpawned(entity)) => entity == 99
+      _ => false
+    },
+    content="true",
+  )
   let pos : Position? = world.get_component(99)
   inspect(pos is Some(_), content="false")
   inspect(has_position(world, 99), content="false")

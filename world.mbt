@@ -60,11 +60,10 @@ pub fn[C : ComponentValue] World::insert_component(
   self : Self,
   entity : EntityId,
   component : C,
-) -> Bool {
-  guard self.is_alive(entity) else { return false }
+) -> Unit raise NotSpawned {
+  guard self.is_alive(entity) else { raise NotSpawned(entity) }
   let map = self.components.get_or_init(entity, fn() { {} })
   map[C::component_id()] = C::to_component(component)
-  true
 }
 
 ///|
