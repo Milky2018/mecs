@@ -389,6 +389,13 @@ test "bench ecs: query" (b : @bench.T) {
     }
     b.keep(total)
   })
+  b.bench(name="for_each1 over 1000 entities", count=100U, fn() {
+    let total = Ref(0)
+    world.for_each1(fn(position : BenchPosition) -> Unit {
+      total.val += position.x + position.y
+    })
+    b.keep(total.val)
+  })
   b.bench(name="query2 over 1000 entities", count=100U, fn() {
     let rows : Array[(BenchPosition, BenchVelocity)] = world.query2().to_array()
     b.keep(checksum_bench_pair_rows(rows))

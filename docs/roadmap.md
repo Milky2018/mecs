@@ -194,6 +194,8 @@ Optimization backlog:
       requested.
 - [x] Make `query5` use a direct value iterator when entity ids are not
       requested.
+- [x] Add streaming `for_each1` traversal helper to avoid allocating result
+      arrays for single-component system-style query loops.
 - [x] Add streaming `for_each2` and `for_each3` traversal helpers to avoid
       allocating result arrays for system-style query loops.
 - [x] Add streaming `for_each4` and `for_each5` traversal helpers to avoid

@@ -25,6 +25,7 @@ The baseline ECS benchmark suite lives in `mecs_bench_test.mbt` and covers:
 - inserting 1000 components
 - removing 1000 components
 - `query1` over 1000 entities
+- `for_each1` over 1000 entities
 - `query2` over 1000 entities
 - `for_each2` over 1000 entities
 - `query3` over 1000 entities
@@ -70,10 +71,10 @@ Recorded on 2026-05-08 with:
 moon bench --target native --release
 ```
 
-| Storage | Spawn 1000 | Despawn 1000 | Insert 1000 | Remove 1000 | Query1 1000 | Dense Query2 1000 | Dense for_each2 1000 | Dense Query3 1000 | Dense for_each3 1000 | Dense Query4 1000 | Dense for_each4 1000 | Dense Query5 1000 | Dense for_each5 1000 | Sparse Query3 1000 | Sparse for_each3 1000 | Resource 1000 |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Original nested maps | 118.21 us | 163.29 us | 196.04 us | 480.26 us | N/A | N/A | N/A | 181.69 us | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 107.25 us |
-| HashMap component columns + direct probes | 104.11 us | 154.61 us | 244.13 us | 602.60 us | 16.40 us | 36.37 us | 17.25 us | 49.08 us | 30.23 us | 64.78 us | 43.30 us | 79.06 us | 58.07 us | 12.83 us | 6.75 us | 107.69 us |
+| Storage | Spawn 1000 | Despawn 1000 | Insert 1000 | Remove 1000 | Query1 1000 | Dense for_each1 1000 | Dense Query2 1000 | Dense for_each2 1000 | Dense Query3 1000 | Dense for_each3 1000 | Dense Query4 1000 | Dense for_each4 1000 | Dense Query5 1000 | Dense for_each5 1000 | Sparse Query3 1000 | Sparse for_each3 1000 | Resource 1000 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Original nested maps | 118.21 us | 163.29 us | 196.04 us | 480.26 us | N/A | N/A | N/A | N/A | 181.69 us | N/A | N/A | N/A | N/A | N/A | N/A | N/A | 107.25 us |
+| HashMap component columns + direct probes | 104.46 us | 160.31 us | 248.72 us | 612.04 us | 16.19 us | 4.18 us | 36.47 us | 17.41 us | 49.48 us | 30.39 us | 64.72 us | 44.14 us | 79.52 us | 59.58 us | 13.13 us | 6.97 us | 107.03 us |
 
 The current storage is query-oriented. Dense `query3` is about 30% faster on
 native from the column-store layout alone, and direct cached store probes bring
@@ -82,10 +83,10 @@ map baseline. Sparse `query3` can drive from the smallest component column and
 avoid repeated component-id/store lookup work. `query2`, `query3`, `query4`,
 and `query5` bypass the entity-returning row iterator when entity ids are not requested.
 `query1` also drives directly from its component store instead of mapping over
-`query1_entities` and discarding entity ids. `for_each3`, `for_each4`, and
-`for_each5` avoid the result array allocation used by `queryN().to_array()` and
-drive directly from the selected component store, bypassing the row iterator
-path.
+`query1_entities` and discarding entity ids. `for_each1`, `for_each3`,
+`for_each4`, and `for_each5` avoid the result array allocation used by
+`queryN().to_array()` and drive directly from the selected component store,
+bypassing the row iterator path.
 Insert and remove are slower because writes maintain both the entity
 component-id list and the component column. The remove benchmark also includes
 world construction, so it captures part of the insertion cost.
@@ -186,9 +187,9 @@ component id in its own `@hashmap.HashMap[EntityId, Component]`:
   entity ids.
 - `query1` has a direct value iterator so it does not build
   `Iter2[EntityId, C]` rows when callers do not need entity ids.
-- `for_each2`, `for_each3`, `for_each4`, and `for_each5` provide streaming
-  traversal when callers do not need an allocated result array, and drive
-  directly from the chosen component store instead of consuming
+- `for_each1`, `for_each2`, `for_each3`, `for_each4`, and `for_each5` provide
+  streaming traversal when callers do not need an allocated result array, and
+  drive directly from the chosen component store instead of consuming
   `queryN_entities`.
 
 Expected benefits:

@@ -957,6 +957,23 @@ pub fn[
 }
 
 ///|
+pub fn[C : ComponentValue] World::for_each1(
+  self : World,
+  f : (C) -> Unit,
+) -> Unit {
+  match self.component_store(C::component_id()) {
+    Some(store) =>
+      store.each(fn(_entity, component) {
+        match C::from_component(component) {
+          Some(value) => f(value)
+          None => ()
+        }
+      })
+    None => ()
+  }
+}
+
+///|
 pub fn[A : ComponentValue, B : ComponentValue] World::for_each2(
   self : World,
   f : (A, B) -> Unit,

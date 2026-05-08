@@ -479,6 +479,21 @@ test "for_each3 streams rows without snapshot writeback" {
 }
 
 ///|
+test "for_each1 streams single component rows" {
+  let world = @mecs.World()
+  let entity = world.spawn()
+  try! world.insert_component(entity, Position::{ x: 1, y: 2 })
+  let total = Ref(0)
+  world.for_each1(fn(pos : Position) -> Unit {
+    total.val += pos.x + pos.y
+    pos.x = 10
+  })
+  let pos : Position = world.require_component(entity)
+  inspect(total.val, content="3")
+  inspect((pos.x, pos.y), content="(10, 2)")
+}
+
+///|
 test "for_each4 and for_each5 stream wide rows" {
   let world4 = @mecs.World()
   let entity4 = world4.spawn_with(

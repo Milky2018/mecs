@@ -105,6 +105,7 @@ pub fn[A : ComponentValue, B : ComponentValue] World::each2(Self, (A, B) -> Unit
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::each3(Self, (A, B, C) -> Unit) -> Unit raise NotSpawned
 pub fn World::entity_ops(Self, UInt) -> EntityOps
 pub fn World::fixed_step(Self) -> Unit raise NotSpawned
+pub fn[C : ComponentValue] World::for_each1(Self, (C) -> Unit) -> Unit
 pub fn[A : ComponentValue, B : ComponentValue] World::for_each2(Self, (A, B) -> Unit) -> Unit
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::for_each3(Self, (A, B, C) -> Unit) -> Unit
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue] World::for_each4(Self, (A, B, C, D) -> Unit) -> Unit
