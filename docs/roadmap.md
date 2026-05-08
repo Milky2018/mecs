@@ -184,6 +184,8 @@ Optimization backlog:
       scanning every entity map.
 - [x] Use component store lengths so wide queries can choose the cheapest
       driving component deterministically.
+- [x] Cache component stores inside query iterators and probe them directly
+      instead of repeatedly calling `World::get_component`.
 - [x] Improve component removal by going directly to component-id storage when
       sparse storage exists.
 - [x] Evaluate despawn bookkeeping strategies for sparse storage: use eager

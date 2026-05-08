@@ -72,6 +72,21 @@ fn[C : ComponentValue] World::query1_entities_from_store(
 }
 
 ///|
+fn[C : ComponentValue] component_from_store(
+  store : @hashmap.HashMap[EntityId, Component]?,
+  entity : EntityId,
+) -> C? {
+  match store {
+    Some(store) =>
+      match store.get(entity) {
+        Some(component) => C::from_component(component)
+        None => None
+      }
+    None => None
+  }
+}
+
+///|
 pub fn[C : ComponentValue] World::query1(self : World) -> Iter[C] {
   self
   .query1_entities()
@@ -110,12 +125,13 @@ pub fn[A : ComponentValue, B : ComponentValue] World::query2_entities(
   let b_id = B::component_id()
   if self.component_store_len(a_id) <= self.component_store_len(b_id) {
     let it = self.query1_entities_from_store(a_id)
+    let b_store = self.component_store(b_id)
     Iter2::new(fn() -> (EntityId, (A, B))? {
       for ;; {
         match it.next() {
           None => break None
           Some((entity, a)) =>
-            match self.get_component(entity) {
+            match component_from_store(b_store, entity) {
               Some(b) => break Some((entity, (a, b)))
               None => continue
             }
@@ -124,12 +140,13 @@ pub fn[A : ComponentValue, B : ComponentValue] World::query2_entities(
     })
   } else {
     let it = self.query1_entities_from_store(b_id)
+    let a_store = self.component_store(a_id)
     Iter2::new(fn() -> (EntityId, (A, B))? {
       for ;; {
         match it.next() {
           None => break None
           Some((entity, b)) =>
-            match self.get_component(entity) {
+            match component_from_store(a_store, entity) {
               Some(a) => break Some((entity, (a, b)))
               None => continue
             }
@@ -164,12 +181,18 @@ pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3
   let c_len = self.component_store_len(c_id)
   if a_len <= b_len && a_len <= c_len {
     let it = self.query1_entities_from_store(a_id)
+    let b_store = self.component_store(b_id)
+    let c_store = self.component_store(c_id)
     Iter2::new(fn() -> (EntityId, (A, B, C))? {
       for ;; {
         match it.next() {
           None => break None
           Some((entity, a)) =>
-            match (self.get_component(entity), self.get_component(entity)) {
+            match
+              (
+                component_from_store(b_store, entity),
+                component_from_store(c_store, entity),
+              ) {
               (Some(b), Some(c)) => break Some((entity, (a, b, c)))
               _ => continue
             }
@@ -178,12 +201,18 @@ pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3
     })
   } else if b_len <= c_len {
     let it = self.query1_entities_from_store(b_id)
+    let a_store = self.component_store(a_id)
+    let c_store = self.component_store(c_id)
     Iter2::new(fn() -> (EntityId, (A, B, C))? {
       for ;; {
         match it.next() {
           None => break None
           Some((entity, b)) =>
-            match (self.get_component(entity), self.get_component(entity)) {
+            match
+              (
+                component_from_store(a_store, entity),
+                component_from_store(c_store, entity),
+              ) {
               (Some(a), Some(c)) => break Some((entity, (a, b, c)))
               _ => continue
             }
@@ -192,12 +221,18 @@ pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3
     })
   } else {
     let it = self.query1_entities_from_store(c_id)
+    let a_store = self.component_store(a_id)
+    let b_store = self.component_store(b_id)
     Iter2::new(fn() -> (EntityId, (A, B, C))? {
       for ;; {
         match it.next() {
           None => break None
           Some((entity, c)) =>
-            match (self.get_component(entity), self.get_component(entity)) {
+            match
+              (
+                component_from_store(a_store, entity),
+                component_from_store(b_store, entity),
+              ) {
               (Some(a), Some(b)) => break Some((entity, (a, b, c)))
               _ => continue
             }
@@ -244,6 +279,9 @@ pub fn[
   let d_len = self.component_store_len(d_id)
   if a_len <= b_len && a_len <= c_len && a_len <= d_len {
     let it = self.query1_entities_from_store(a_id)
+    let b_store = self.component_store(b_id)
+    let c_store = self.component_store(c_id)
+    let d_store = self.component_store(d_id)
     Iter2::new(fn() -> (EntityId, (A, B, C, D))? {
       for ;; {
         match it.next() {
@@ -251,9 +289,9 @@ pub fn[
           Some((entity, a)) =>
             match
               (
-                self.get_component(entity),
-                self.get_component(entity),
-                self.get_component(entity),
+                component_from_store(b_store, entity),
+                component_from_store(c_store, entity),
+                component_from_store(d_store, entity),
               ) {
               (Some(b), Some(c), Some(d)) => break Some((entity, (a, b, c, d)))
               _ => continue
@@ -263,6 +301,9 @@ pub fn[
     })
   } else if b_len <= c_len && b_len <= d_len {
     let it = self.query1_entities_from_store(b_id)
+    let a_store = self.component_store(a_id)
+    let c_store = self.component_store(c_id)
+    let d_store = self.component_store(d_id)
     Iter2::new(fn() -> (EntityId, (A, B, C, D))? {
       for ;; {
         match it.next() {
@@ -270,9 +311,9 @@ pub fn[
           Some((entity, b)) =>
             match
               (
-                self.get_component(entity),
-                self.get_component(entity),
-                self.get_component(entity),
+                component_from_store(a_store, entity),
+                component_from_store(c_store, entity),
+                component_from_store(d_store, entity),
               ) {
               (Some(a), Some(c), Some(d)) => break Some((entity, (a, b, c, d)))
               _ => continue
@@ -282,6 +323,9 @@ pub fn[
     })
   } else if c_len <= d_len {
     let it = self.query1_entities_from_store(c_id)
+    let a_store = self.component_store(a_id)
+    let b_store = self.component_store(b_id)
+    let d_store = self.component_store(d_id)
     Iter2::new(fn() -> (EntityId, (A, B, C, D))? {
       for ;; {
         match it.next() {
@@ -289,9 +333,9 @@ pub fn[
           Some((entity, c)) =>
             match
               (
-                self.get_component(entity),
-                self.get_component(entity),
-                self.get_component(entity),
+                component_from_store(a_store, entity),
+                component_from_store(b_store, entity),
+                component_from_store(d_store, entity),
               ) {
               (Some(a), Some(b), Some(d)) => break Some((entity, (a, b, c, d)))
               _ => continue
@@ -301,6 +345,9 @@ pub fn[
     })
   } else {
     let it = self.query1_entities_from_store(d_id)
+    let a_store = self.component_store(a_id)
+    let b_store = self.component_store(b_id)
+    let c_store = self.component_store(c_id)
     Iter2::new(fn() -> (EntityId, (A, B, C, D))? {
       for ;; {
         match it.next() {
@@ -308,9 +355,9 @@ pub fn[
           Some((entity, d)) =>
             match
               (
-                self.get_component(entity),
-                self.get_component(entity),
-                self.get_component(entity),
+                component_from_store(a_store, entity),
+                component_from_store(b_store, entity),
+                component_from_store(c_store, entity),
               ) {
               (Some(a), Some(b), Some(c)) => break Some((entity, (a, b, c, d)))
               _ => continue
@@ -362,6 +409,10 @@ pub fn[
   let e_len = self.component_store_len(e_id)
   if a_len <= b_len && a_len <= c_len && a_len <= d_len && a_len <= e_len {
     let it = self.query1_entities_from_store(a_id)
+    let b_store = self.component_store(b_id)
+    let c_store = self.component_store(c_id)
+    let d_store = self.component_store(d_id)
+    let e_store = self.component_store(e_id)
     Iter2::new(fn() -> (EntityId, (A, B, C, D, E))? {
       for ;; {
         match it.next() {
@@ -369,10 +420,10 @@ pub fn[
           Some((entity, a)) =>
             match
               (
-                self.get_component(entity),
-                self.get_component(entity),
-                self.get_component(entity),
-                self.get_component(entity),
+                component_from_store(b_store, entity),
+                component_from_store(c_store, entity),
+                component_from_store(d_store, entity),
+                component_from_store(e_store, entity),
               ) {
               (Some(b), Some(c), Some(d), Some(e)) =>
                 break Some((entity, (a, b, c, d, e)))
@@ -383,6 +434,10 @@ pub fn[
     })
   } else if b_len <= c_len && b_len <= d_len && b_len <= e_len {
     let it = self.query1_entities_from_store(b_id)
+    let a_store = self.component_store(a_id)
+    let c_store = self.component_store(c_id)
+    let d_store = self.component_store(d_id)
+    let e_store = self.component_store(e_id)
     Iter2::new(fn() -> (EntityId, (A, B, C, D, E))? {
       for ;; {
         match it.next() {
@@ -390,10 +445,10 @@ pub fn[
           Some((entity, b)) =>
             match
               (
-                self.get_component(entity),
-                self.get_component(entity),
-                self.get_component(entity),
-                self.get_component(entity),
+                component_from_store(a_store, entity),
+                component_from_store(c_store, entity),
+                component_from_store(d_store, entity),
+                component_from_store(e_store, entity),
               ) {
               (Some(a), Some(c), Some(d), Some(e)) =>
                 break Some((entity, (a, b, c, d, e)))
@@ -404,6 +459,10 @@ pub fn[
     })
   } else if c_len <= d_len && c_len <= e_len {
     let it = self.query1_entities_from_store(c_id)
+    let a_store = self.component_store(a_id)
+    let b_store = self.component_store(b_id)
+    let d_store = self.component_store(d_id)
+    let e_store = self.component_store(e_id)
     Iter2::new(fn() -> (EntityId, (A, B, C, D, E))? {
       for ;; {
         match it.next() {
@@ -411,10 +470,10 @@ pub fn[
           Some((entity, c)) =>
             match
               (
-                self.get_component(entity),
-                self.get_component(entity),
-                self.get_component(entity),
-                self.get_component(entity),
+                component_from_store(a_store, entity),
+                component_from_store(b_store, entity),
+                component_from_store(d_store, entity),
+                component_from_store(e_store, entity),
               ) {
               (Some(a), Some(b), Some(d), Some(e)) =>
                 break Some((entity, (a, b, c, d, e)))
@@ -425,6 +484,10 @@ pub fn[
     })
   } else if d_len <= e_len {
     let it = self.query1_entities_from_store(d_id)
+    let a_store = self.component_store(a_id)
+    let b_store = self.component_store(b_id)
+    let c_store = self.component_store(c_id)
+    let e_store = self.component_store(e_id)
     Iter2::new(fn() -> (EntityId, (A, B, C, D, E))? {
       for ;; {
         match it.next() {
@@ -432,10 +495,10 @@ pub fn[
           Some((entity, d)) =>
             match
               (
-                self.get_component(entity),
-                self.get_component(entity),
-                self.get_component(entity),
-                self.get_component(entity),
+                component_from_store(a_store, entity),
+                component_from_store(b_store, entity),
+                component_from_store(c_store, entity),
+                component_from_store(e_store, entity),
               ) {
               (Some(a), Some(b), Some(c), Some(e)) =>
                 break Some((entity, (a, b, c, d, e)))
@@ -446,6 +509,10 @@ pub fn[
     })
   } else {
     let it = self.query1_entities_from_store(e_id)
+    let a_store = self.component_store(a_id)
+    let b_store = self.component_store(b_id)
+    let c_store = self.component_store(c_id)
+    let d_store = self.component_store(d_id)
     Iter2::new(fn() -> (EntityId, (A, B, C, D, E))? {
       for ;; {
         match it.next() {
@@ -453,10 +520,10 @@ pub fn[
           Some((entity, e)) =>
             match
               (
-                self.get_component(entity),
-                self.get_component(entity),
-                self.get_component(entity),
-                self.get_component(entity),
+                component_from_store(a_store, entity),
+                component_from_store(b_store, entity),
+                component_from_store(c_store, entity),
+                component_from_store(d_store, entity),
               ) {
               (Some(a), Some(b), Some(c), Some(d)) =>
                 break Some((entity, (a, b, c, d, e)))
