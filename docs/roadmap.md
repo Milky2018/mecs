@@ -170,17 +170,27 @@ Acceptance criteria:
 
 Optimization backlog:
 
-- [ ] Prototype per-component sparse storage behind the existing public API:
-      `Map[ComponentId, Map[EntityId, Component]]` or a sparse-set-like table.
-- [ ] Make queries iterate the smallest matching component table instead of
+- [x] Add ECS-shaped storage comparison benchmarks for nested maps,
+      per-component maps, per-component hashmaps, `SlotMap + SecondaryMap`, and
+      `SlotMap + SparseSecondaryMap`.
+- [x] Implement per-component storage behind the existing public API:
+      `Map[ComponentId, @hashmap.HashMap[EntityId, Component]]`.
+- [ ] Prototype `SlotMap`-allocated entity keys plus per-component
+      `SecondaryMap` columns after deciding whether `EntityId = UInt` can
+      change.
+- [x] Keep `@hashmap.HashMap` component columns as the control implementation
+      and adopt them for the current backend.
+- [x] Make queries iterate the smallest matching component table instead of
       scanning every entity map.
-- [ ] Add component-count metadata so wide queries can choose the cheapest
+- [x] Use component store lengths so wide queries can choose the cheapest
       driving component deterministically.
-- [ ] Improve component removal by going directly to component-id storage when
+- [x] Improve component removal by going directly to component-id storage when
       sparse storage exists.
-- [ ] Evaluate despawn bookkeeping strategies for sparse storage: eager removal
-      from every component table versus tombstones plus periodic compaction.
-- [ ] Preserve current `ComponentValue` / `ResourceValue` conversion and
+- [x] Evaluate despawn bookkeeping strategies for sparse storage: use eager
+      removal from the entity's recorded component-id list for now.
+- [ ] Treat `SparseSecondaryMap` as a memory-oriented experiment, not the
+      default path, unless memory benchmarks justify its runtime cost.
+- [x] Preserve current `ComponentValue` / `ResourceValue` conversion and
       `EcsError` mismatch behavior during any storage refactor.
 - [ ] Keep benchmarks as the acceptance gate: require before/after numbers for
       spawn, despawn, insert, remove, query, and resources on all stable targets.

@@ -125,6 +125,20 @@ fn build_bench_world(size : Int) -> @mecs.World {
 }
 
 ///|
+fn build_sparse_bench_world(size : Int, health_stride : Int) -> @mecs.World {
+  let world = @mecs.World()
+  for i in 0..<size {
+    let entity = world.spawn_with(
+      (BenchPosition::{ x: i, y: i }, BenchVelocity::{ x: 1, y: -1 }),
+    )
+    if i % health_stride == 0 {
+      try! world.insert_component(entity, BenchHealth::{ value: i })
+    }
+  }
+  world
+}
+
+///|
 fn checksum_bench_rows(
   rows : Array[(BenchPosition, BenchVelocity, BenchHealth)],
 ) -> Int {
@@ -196,6 +210,17 @@ test "bench ecs: remove component" (b : @bench.T) {
 test "bench ecs: query" (b : @bench.T) {
   let world = build_bench_world(bench_size)
   b.bench(name="query3 over 1000 entities", count=100U, fn() {
+    let rows : Array[(BenchPosition, BenchVelocity, BenchHealth)] = world
+      .query3()
+      .to_array()
+    b.keep(checksum_bench_rows(rows))
+  })
+}
+
+///|
+test "bench ecs: sparse query" (b : @bench.T) {
+  let world = build_sparse_bench_world(bench_size, 4)
+  b.bench(name="sparse query3 over 1000 entities", count=100U, fn() {
     let rows : Array[(BenchPosition, BenchVelocity, BenchHealth)] = world
       .query3()
       .to_array()

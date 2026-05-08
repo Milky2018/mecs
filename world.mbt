@@ -2,7 +2,8 @@
 struct World {
   mut entity_id_gen : EntityId
   entities : @set.Set[EntityId]
-  components : Map[EntityId, Map[ComponentId, Component]]
+  component_ids : Map[EntityId, Array[ComponentId]]
+  component_stores : Map[ComponentId, @hashmap.HashMap[EntityId, Component]]
   resources : Map[ResourceId, Resource]
   systems : Array[ScheduledSystem]
   mut startup_complete : Bool
@@ -13,7 +14,8 @@ pub fn World::World() -> Self {
   {
     entity_id_gen: 0,
     entities: Set([]),
-    components: {},
+    component_ids: {},
+    component_stores: {},
     resources: {},
     systems: [],
     startup_complete: false,
@@ -41,7 +43,7 @@ fn World::spawn_reserved(self : Self, entity : EntityId) -> Unit {
   }
   guard !self.is_alive(entity) else { return }
   self.entities.add(entity)
-  self.components[entity] = {}
+  self.component_ids[entity] = []
 }
 
 ///|
@@ -59,8 +61,13 @@ pub fn World::is_alive(self : Self, entity : EntityId) -> Bool {
 ///|
 pub fn World::despawn(self : Self, entity : EntityId) -> Bool {
   guard self.is_alive(entity) else { return false }
+  match self.component_ids.get(entity) {
+    Some(ids) =>
+      ids.each(fn(id) { self.remove_component_from_store(entity, id) })
+    None => ()
+  }
   self.entities.remove(entity)
-  self.components.remove(entity)
+  self.component_ids.remove(entity)
   true
 }
 
@@ -73,11 +80,55 @@ pub fn World::despawn_checked(
 }
 
 ///|
-fn World::component_map(
+fn World::entity_component_ids(
   self : Self,
   entity : EntityId,
-) -> Map[ComponentId, Component]? {
-  self.components.get(entity)
+) -> Array[ComponentId]? {
+  self.component_ids.get(entity)
+}
+
+///|
+fn World::component_store(
+  self : Self,
+  id : ComponentId,
+) -> @hashmap.HashMap[EntityId, Component]? {
+  self.component_stores.get(id)
+}
+
+///|
+fn World::component_store_len(self : Self, id : ComponentId) -> Int {
+  match self.component_store(id) {
+    Some(store) => store.length()
+    None => 0
+  }
+}
+
+///|
+fn World::insert_component_into_store(
+  self : Self,
+  entity : EntityId,
+  id : ComponentId,
+  component : Component,
+) -> Unit {
+  let store = self.component_stores.get_or_init(id, fn() { HashMap([]) })
+  store[entity] = component
+}
+
+///|
+fn World::remove_component_from_store(
+  self : Self,
+  entity : EntityId,
+  id : ComponentId,
+) -> Unit {
+  match self.component_stores.get(id) {
+    Some(store) => {
+      store.remove(entity)
+      if store.is_empty() {
+        self.component_stores.remove(id)
+      }
+    }
+    None => ()
+  }
 }
 
 ///|
@@ -101,8 +152,13 @@ fn World::insert_component_value(
   component : Component,
 ) -> Unit raise NotSpawned {
   guard self.is_alive(entity) else { raise NotSpawned(entity) }
-  let map = self.components.get_or_init(entity, fn() { {} })
-  map[id] = component
+  let ids = self.component_ids.get_or_init(entity, fn() {
+    Array::new(capacity=4)
+  })
+  if !ids.contains(id) {
+    ids.push(id)
+  }
+  self.insert_component_into_store(entity, id, component)
 }
 
 ///|
@@ -112,8 +168,15 @@ pub fn[C : ComponentValue] World::insert_component_checked(
   component : C,
 ) -> Unit raise EcsError {
   guard self.is_alive(entity) else { raise EntityMissing(entity) }
-  let map = self.components.get_or_init(entity, fn() { {} })
-  map[C::component_id()] = C::to_component(component)
+  let id = C::component_id()
+  let value = C::to_component(component)
+  let ids = self.component_ids.get_or_init(entity, fn() {
+    Array::new(capacity=4)
+  })
+  if !ids.contains(id) {
+    ids.push(id)
+  }
+  self.insert_component_into_store(entity, id, value)
 }
 
 ///|
@@ -131,9 +194,9 @@ pub fn[C : ComponentValue] World::get_component(
   self : Self,
   entity : EntityId,
 ) -> C? {
-  match self.component_map(entity) {
-    Some(map) =>
-      match map.get(C::component_id()) {
+  match self.component_store(C::component_id()) {
+    Some(store) =>
+      match store.get(entity) {
         Some(component) => C::from_component(component)
         None => None
       }
@@ -148,9 +211,9 @@ pub fn[C : ComponentValue] World::get_component_checked(
 ) -> C raise EcsError {
   let id = C::component_id()
   guard self.is_alive(entity) else { raise EntityMissing(entity) }
-  match self.component_map(entity) {
-    Some(map) =>
-      match map.get(id) {
+  match self.component_store(id) {
+    Some(store) =>
+      match store.get(entity) {
         Some(component) =>
           match C::from_component(component) {
             Some(value) => value
@@ -190,12 +253,12 @@ pub fn[C : ComponentValue] World::remove_component_checked(
 ) -> Unit raise EcsError {
   let id = C::component_id()
   guard self.is_alive(entity) else { raise EntityMissing(entity) }
-  match self.component_map(entity) {
-    Some(map) =>
-      match map.get(id) {
+  match self.component_store(id) {
+    Some(store) =>
+      match store.get(entity) {
         Some(component) =>
           match C::from_component(component) {
-            Some(_) => map.remove(id)
+            Some(_) => self.remove_component_value(entity, id)
             None => raise ComponentVariantMismatch(entity, id)
           }
         None => raise ComponentMissing(entity, id)
@@ -210,8 +273,14 @@ fn World::remove_component_value(
   entity : EntityId,
   id : ComponentId,
 ) -> Unit {
-  match self.component_map(entity) {
-    Some(map) => map.remove(id)
+  match self.entity_component_ids(entity) {
+    Some(ids) => {
+      match ids.search(id) {
+        Some(index) => ignore(ids.remove(index))
+        None => ()
+      }
+      self.remove_component_from_store(entity, id)
+    }
     None => ()
   }
 }

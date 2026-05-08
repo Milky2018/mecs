@@ -46,6 +46,32 @@ pub fn[Q : Query] World::query(self : World) -> Iter[Q] {
 }
 
 ///|
+fn[C : ComponentValue] World::query1_entities_from_store(
+  self : World,
+  id : ComponentId,
+) -> Iter2[EntityId, C] {
+  match self.component_store(id) {
+    Some(store) => {
+      let it = store.iter()
+      Iter2::new(fn() -> (EntityId, C)? {
+        for ;; {
+          let row = match it.next() {
+            Some(row) => row
+            None => break None
+          }
+          let (entity, component) = row
+          match C::from_component(component) {
+            Some(value) => break Some((entity, value))
+            None => continue
+          }
+        }
+      })
+    }
+    None => Iter2::new(fn() -> (EntityId, C)? { None })
+  }
+}
+
+///|
 pub fn[C : ComponentValue] World::query1(self : World) -> Iter[C] {
   self
   .query1_entities()
@@ -60,24 +86,7 @@ pub fn[C : ComponentValue] World::query1(self : World) -> Iter[C] {
 pub fn[C : ComponentValue] World::query1_entities(
   self : World,
 ) -> Iter2[EntityId, C] {
-  let it = self.components.iter()
-  Iter2::new(fn() -> (EntityId, C)? {
-    for ;; {
-      let row = match it.next() {
-        Some(row) => row
-        None => break None
-      }
-      let (entity, map) = row
-      match map.get(C::component_id()) {
-        Some(component) =>
-          match C::from_component(component) {
-            Some(value) => break Some((entity, value))
-            None => continue
-          }
-        None => continue
-      }
-    }
-  })
+  self.query1_entities_from_store(C::component_id())
 }
 
 ///|
@@ -97,19 +106,37 @@ pub fn[A : ComponentValue, B : ComponentValue] World::query2(
 pub fn[A : ComponentValue, B : ComponentValue] World::query2_entities(
   self : World,
 ) -> Iter2[EntityId, (A, B)] {
-  let it = self.query1_entities()
-  Iter2::new(fn() -> (EntityId, (A, B))? {
-    for ;; {
-      match it.next() {
-        None => break None
-        Some((entity, a)) =>
-          match self.get_component(entity) {
-            Some(b) => break Some((entity, (a, b)))
-            None => continue
-          }
+  let a_id = A::component_id()
+  let b_id = B::component_id()
+  if self.component_store_len(a_id) <= self.component_store_len(b_id) {
+    let it = self.query1_entities_from_store(a_id)
+    Iter2::new(fn() -> (EntityId, (A, B))? {
+      for ;; {
+        match it.next() {
+          None => break None
+          Some((entity, a)) =>
+            match self.get_component(entity) {
+              Some(b) => break Some((entity, (a, b)))
+              None => continue
+            }
+        }
       }
-    }
-  })
+    })
+  } else {
+    let it = self.query1_entities_from_store(b_id)
+    Iter2::new(fn() -> (EntityId, (A, B))? {
+      for ;; {
+        match it.next() {
+          None => break None
+          Some((entity, b)) =>
+            match self.get_component(entity) {
+              Some(a) => break Some((entity, (a, b)))
+              None => continue
+            }
+        }
+      }
+    })
+  }
 }
 
 ///|
@@ -129,19 +156,55 @@ pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3_entities(
   self : World,
 ) -> Iter2[EntityId, (A, B, C)] {
-  let it = self.query2_entities()
-  Iter2::new(fn() -> (EntityId, (A, B, C))? {
-    for ;; {
-      match it.next() {
-        None => break None
-        Some((entity, (a, b))) =>
-          match self.get_component(entity) {
-            Some(c) => break Some((entity, (a, b, c)))
-            None => continue
-          }
+  let a_id = A::component_id()
+  let b_id = B::component_id()
+  let c_id = C::component_id()
+  let a_len = self.component_store_len(a_id)
+  let b_len = self.component_store_len(b_id)
+  let c_len = self.component_store_len(c_id)
+  if a_len <= b_len && a_len <= c_len {
+    let it = self.query1_entities_from_store(a_id)
+    Iter2::new(fn() -> (EntityId, (A, B, C))? {
+      for ;; {
+        match it.next() {
+          None => break None
+          Some((entity, a)) =>
+            match (self.get_component(entity), self.get_component(entity)) {
+              (Some(b), Some(c)) => break Some((entity, (a, b, c)))
+              _ => continue
+            }
+        }
       }
-    }
-  })
+    })
+  } else if b_len <= c_len {
+    let it = self.query1_entities_from_store(b_id)
+    Iter2::new(fn() -> (EntityId, (A, B, C))? {
+      for ;; {
+        match it.next() {
+          None => break None
+          Some((entity, b)) =>
+            match (self.get_component(entity), self.get_component(entity)) {
+              (Some(a), Some(c)) => break Some((entity, (a, b, c)))
+              _ => continue
+            }
+        }
+      }
+    })
+  } else {
+    let it = self.query1_entities_from_store(c_id)
+    Iter2::new(fn() -> (EntityId, (A, B, C))? {
+      for ;; {
+        match it.next() {
+          None => break None
+          Some((entity, c)) =>
+            match (self.get_component(entity), self.get_component(entity)) {
+              (Some(a), Some(b)) => break Some((entity, (a, b, c)))
+              _ => continue
+            }
+        }
+      }
+    })
+  }
 }
 
 ///|
@@ -171,19 +234,91 @@ pub fn[
 ] World::query4_entities(
   self : World,
 ) -> Iter2[EntityId, (A, B, C, D)] {
-  let it = self.query3_entities()
-  Iter2::new(fn() -> (EntityId, (A, B, C, D))? {
-    for ;; {
-      match it.next() {
-        None => break None
-        Some((entity, (a, b, c))) =>
-          match self.get_component(entity) {
-            Some(d) => break Some((entity, (a, b, c, d)))
-            None => continue
-          }
+  let a_id = A::component_id()
+  let b_id = B::component_id()
+  let c_id = C::component_id()
+  let d_id = D::component_id()
+  let a_len = self.component_store_len(a_id)
+  let b_len = self.component_store_len(b_id)
+  let c_len = self.component_store_len(c_id)
+  let d_len = self.component_store_len(d_id)
+  if a_len <= b_len && a_len <= c_len && a_len <= d_len {
+    let it = self.query1_entities_from_store(a_id)
+    Iter2::new(fn() -> (EntityId, (A, B, C, D))? {
+      for ;; {
+        match it.next() {
+          None => break None
+          Some((entity, a)) =>
+            match
+              (
+                self.get_component(entity),
+                self.get_component(entity),
+                self.get_component(entity),
+              ) {
+              (Some(b), Some(c), Some(d)) => break Some((entity, (a, b, c, d)))
+              _ => continue
+            }
+        }
       }
-    }
-  })
+    })
+  } else if b_len <= c_len && b_len <= d_len {
+    let it = self.query1_entities_from_store(b_id)
+    Iter2::new(fn() -> (EntityId, (A, B, C, D))? {
+      for ;; {
+        match it.next() {
+          None => break None
+          Some((entity, b)) =>
+            match
+              (
+                self.get_component(entity),
+                self.get_component(entity),
+                self.get_component(entity),
+              ) {
+              (Some(a), Some(c), Some(d)) => break Some((entity, (a, b, c, d)))
+              _ => continue
+            }
+        }
+      }
+    })
+  } else if c_len <= d_len {
+    let it = self.query1_entities_from_store(c_id)
+    Iter2::new(fn() -> (EntityId, (A, B, C, D))? {
+      for ;; {
+        match it.next() {
+          None => break None
+          Some((entity, c)) =>
+            match
+              (
+                self.get_component(entity),
+                self.get_component(entity),
+                self.get_component(entity),
+              ) {
+              (Some(a), Some(b), Some(d)) => break Some((entity, (a, b, c, d)))
+              _ => continue
+            }
+        }
+      }
+    })
+  } else {
+    let it = self.query1_entities_from_store(d_id)
+    Iter2::new(fn() -> (EntityId, (A, B, C, D))? {
+      for ;; {
+        match it.next() {
+          None => break None
+          Some((entity, d)) =>
+            match
+              (
+                self.get_component(entity),
+                self.get_component(entity),
+                self.get_component(entity),
+              ) {
+              (Some(a), Some(b), Some(c)) => break Some((entity, (a, b, c, d)))
+              _ => continue
+            }
+        }
+      }
+    })
+  }
 }
 
 ///|
@@ -215,19 +350,122 @@ pub fn[
 ] World::query5_entities(
   self : World,
 ) -> Iter2[EntityId, (A, B, C, D, E)] {
-  let it = self.query4_entities()
-  Iter2::new(fn() -> (EntityId, (A, B, C, D, E))? {
-    for ;; {
-      match it.next() {
-        None => break None
-        Some((entity, (a, b, c, d))) =>
-          match self.get_component(entity) {
-            Some(e) => break Some((entity, (a, b, c, d, e)))
-            None => continue
-          }
+  let a_id = A::component_id()
+  let b_id = B::component_id()
+  let c_id = C::component_id()
+  let d_id = D::component_id()
+  let e_id = E::component_id()
+  let a_len = self.component_store_len(a_id)
+  let b_len = self.component_store_len(b_id)
+  let c_len = self.component_store_len(c_id)
+  let d_len = self.component_store_len(d_id)
+  let e_len = self.component_store_len(e_id)
+  if a_len <= b_len && a_len <= c_len && a_len <= d_len && a_len <= e_len {
+    let it = self.query1_entities_from_store(a_id)
+    Iter2::new(fn() -> (EntityId, (A, B, C, D, E))? {
+      for ;; {
+        match it.next() {
+          None => break None
+          Some((entity, a)) =>
+            match
+              (
+                self.get_component(entity),
+                self.get_component(entity),
+                self.get_component(entity),
+                self.get_component(entity),
+              ) {
+              (Some(b), Some(c), Some(d), Some(e)) =>
+                break Some((entity, (a, b, c, d, e)))
+              _ => continue
+            }
+        }
       }
-    }
-  })
+    })
+  } else if b_len <= c_len && b_len <= d_len && b_len <= e_len {
+    let it = self.query1_entities_from_store(b_id)
+    Iter2::new(fn() -> (EntityId, (A, B, C, D, E))? {
+      for ;; {
+        match it.next() {
+          None => break None
+          Some((entity, b)) =>
+            match
+              (
+                self.get_component(entity),
+                self.get_component(entity),
+                self.get_component(entity),
+                self.get_component(entity),
+              ) {
+              (Some(a), Some(c), Some(d), Some(e)) =>
+                break Some((entity, (a, b, c, d, e)))
+              _ => continue
+            }
+        }
+      }
+    })
+  } else if c_len <= d_len && c_len <= e_len {
+    let it = self.query1_entities_from_store(c_id)
+    Iter2::new(fn() -> (EntityId, (A, B, C, D, E))? {
+      for ;; {
+        match it.next() {
+          None => break None
+          Some((entity, c)) =>
+            match
+              (
+                self.get_component(entity),
+                self.get_component(entity),
+                self.get_component(entity),
+                self.get_component(entity),
+              ) {
+              (Some(a), Some(b), Some(d), Some(e)) =>
+                break Some((entity, (a, b, c, d, e)))
+              _ => continue
+            }
+        }
+      }
+    })
+  } else if d_len <= e_len {
+    let it = self.query1_entities_from_store(d_id)
+    Iter2::new(fn() -> (EntityId, (A, B, C, D, E))? {
+      for ;; {
+        match it.next() {
+          None => break None
+          Some((entity, d)) =>
+            match
+              (
+                self.get_component(entity),
+                self.get_component(entity),
+                self.get_component(entity),
+                self.get_component(entity),
+              ) {
+              (Some(a), Some(b), Some(c), Some(e)) =>
+                break Some((entity, (a, b, c, d, e)))
+              _ => continue
+            }
+        }
+      }
+    })
+  } else {
+    let it = self.query1_entities_from_store(e_id)
+    Iter2::new(fn() -> (EntityId, (A, B, C, D, E))? {
+      for ;; {
+        match it.next() {
+          None => break None
+          Some((entity, e)) =>
+            match
+              (
+                self.get_component(entity),
+                self.get_component(entity),
+                self.get_component(entity),
+                self.get_component(entity),
+              ) {
+              (Some(a), Some(b), Some(c), Some(d)) =>
+                break Some((entity, (a, b, c, d, e)))
+              _ => continue
+            }
+        }
+      }
+    })
+  }
 }
 
 ///|

@@ -1,4 +1,9 @@
 import {
-  "moonbitlang/core/bench",
+  "moonbitlang/core/hashmap",
   "moonbitlang/core/set",
 }
+
+import {
+  "Milky2018/slotmap",
+  "moonbitlang/core/bench",
+} for "test"
