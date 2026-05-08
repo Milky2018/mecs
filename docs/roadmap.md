@@ -188,6 +188,8 @@ Optimization backlog:
       instead of repeatedly calling `World::get_component`.
 - [x] Add streaming `for_each2` and `for_each3` traversal helpers to avoid
       allocating result arrays for system-style query loops.
+- [x] Make streaming traversal helpers drive directly from the chosen component
+      store instead of consuming `queryN_entities`.
 - [x] Improve component removal by going directly to component-id storage when
       sparse storage exists.
 - [x] Evaluate despawn bookkeeping strategies for sparse storage: use eager

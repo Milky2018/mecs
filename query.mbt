@@ -540,11 +540,41 @@ pub fn[A : ComponentValue, B : ComponentValue] World::for_each2(
   self : World,
   f : (A, B) -> Unit,
 ) -> Unit {
-  let it = self.query2_entities()
-  for ;; {
-    match it.next() {
-      Some((_entity, (a, b))) => f(a, b)
-      None => break
+  let a_id = A::component_id()
+  let b_id = B::component_id()
+  if self.component_store_len(a_id) <= self.component_store_len(b_id) {
+    match self.component_store(a_id) {
+      Some(a_store) => {
+        let b_store = self.component_store(b_id)
+        a_store.each(fn(entity, component) {
+          match
+            (
+              A::from_component(component),
+              component_from_store(b_store, entity),
+            ) {
+            (Some(a), Some(b)) => f(a, b)
+            _ => ()
+          }
+        })
+      }
+      None => ()
+    }
+  } else {
+    match self.component_store(b_id) {
+      Some(b_store) => {
+        let a_store = self.component_store(a_id)
+        b_store.each(fn(entity, component) {
+          match
+            (
+              component_from_store(a_store, entity),
+              B::from_component(component),
+            ) {
+            (Some(a), Some(b)) => f(a, b)
+            _ => ()
+          }
+        })
+      }
+      None => ()
     }
   }
 }
@@ -554,11 +584,68 @@ pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::for_ea
   self : World,
   f : (A, B, C) -> Unit,
 ) -> Unit {
-  let it = self.query3_entities()
-  for ;; {
-    match it.next() {
-      Some((_entity, (a, b, c))) => f(a, b, c)
-      None => break
+  let a_id = A::component_id()
+  let b_id = B::component_id()
+  let c_id = C::component_id()
+  let a_len = self.component_store_len(a_id)
+  let b_len = self.component_store_len(b_id)
+  let c_len = self.component_store_len(c_id)
+  if a_len <= b_len && a_len <= c_len {
+    match self.component_store(a_id) {
+      Some(a_store) => {
+        let b_store = self.component_store(b_id)
+        let c_store = self.component_store(c_id)
+        a_store.each(fn(entity, component) {
+          match
+            (
+              A::from_component(component),
+              component_from_store(b_store, entity),
+              component_from_store(c_store, entity),
+            ) {
+            (Some(a), Some(b), Some(c)) => f(a, b, c)
+            _ => ()
+          }
+        })
+      }
+      None => ()
+    }
+  } else if b_len <= c_len {
+    match self.component_store(b_id) {
+      Some(b_store) => {
+        let a_store = self.component_store(a_id)
+        let c_store = self.component_store(c_id)
+        b_store.each(fn(entity, component) {
+          match
+            (
+              component_from_store(a_store, entity),
+              B::from_component(component),
+              component_from_store(c_store, entity),
+            ) {
+            (Some(a), Some(b), Some(c)) => f(a, b, c)
+            _ => ()
+          }
+        })
+      }
+      None => ()
+    }
+  } else {
+    match self.component_store(c_id) {
+      Some(c_store) => {
+        let a_store = self.component_store(a_id)
+        let b_store = self.component_store(b_id)
+        c_store.each(fn(entity, component) {
+          match
+            (
+              component_from_store(a_store, entity),
+              component_from_store(b_store, entity),
+              C::from_component(component),
+            ) {
+            (Some(a), Some(b), Some(c)) => f(a, b, c)
+            _ => ()
+          }
+        })
+      }
+      None => ()
     }
   }
 }
