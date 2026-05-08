@@ -12,7 +12,7 @@ priv struct Velocity {
 
 ///|
 priv struct Health {
-  value : Int
+  mut value : Int
 }
 
 ///|
@@ -178,7 +178,7 @@ fn has_step_count_alias(world : @mecs.World) -> Bool {
 
 ///|
 fn move_system(world : @mecs.World) -> Unit {
-  world.each2(fn(vel : Velocity, pos : Position) -> Unit {
+  try! world.each2(fn(vel : Velocity, pos : Position) -> Unit {
     pos.x += vel.x
     pos.y += vel.y
   })
@@ -207,6 +207,61 @@ test "systems persist component and resource mutations" {
   let pos2 : Position = world.require_component(entity)
   inspect((pos2.x, pos2.y), content="(2, -2)")
   inspect((world.get_resource() : StepCount).value, content="2")
+}
+
+///|
+test "each3 persists component mutations" {
+  let world = @mecs.World()
+  let entity = world.spawn_with(
+    (Position::{ x: 1, y: 1 }, Velocity::{ x: 2, y: 3 }, Health::{ value: 4 }),
+  )
+  try! world.each3(fn(vel : Velocity, pos : Position, health : Health) -> Unit {
+    pos.x += vel.x
+    pos.y += vel.y
+    health.value += 10
+  })
+  let pos : Position = world.require_component(entity)
+  let health : Health = world.require_component(entity)
+  inspect((pos.x, pos.y, health.value), content="(3, 4, 14)")
+}
+
+///|
+test "each2 snapshots rows and keeps nonqueried structural changes" {
+  let world = @mecs.World()
+  let entity = world.spawn_with(
+    (Position::{ x: 1, y: 1 }, Velocity::{ x: 0, y: 0 }, Health::{ value: 1 }),
+  )
+  let visited = Ref(0)
+  try! world.each2(fn(_vel : Velocity, _pos : Position) -> Unit {
+    visited.val += 1
+    ignore(
+      world.spawn_with((Position::{ x: 9, y: 9 }, Velocity::{ x: 1, y: 1 })),
+    )
+    world.remove_component(entity, _hint=(None : Health?))
+  })
+  let rows : Array[(Velocity, Position)] = world.query().to_array()
+  let health : Health? = world.get_component(entity)
+  inspect(visited.val, content="1")
+  inspect(rows.length(), content="2")
+  inspect(health is Some(_), content="false")
+}
+
+///|
+test "each2 reports not spawned when yielded entity is despawned before writeback" {
+  let world = @mecs.World()
+  let entity = world.spawn_with(
+    (Position::{ x: 1, y: 1 }, Velocity::{ x: 0, y: 0 }),
+  )
+  let result = try? world.each2(fn(_vel : Velocity, _pos : Position) -> Unit {
+    ignore(world.despawn(entity))
+  })
+  inspect(
+    match result {
+      Err(NotSpawned(id)) => id == entity
+      _ => false
+    },
+    content="true",
+  )
 }
 
 ///|

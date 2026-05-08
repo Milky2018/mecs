@@ -41,28 +41,28 @@ Acceptance criteria:
 
 Goal: make system and query behavior deterministic.
 
-- [ ] Write down the contract for `queryN`, `queryN_entities`, and `eachN`.
-- [ ] Decide whether `queryN` returns snapshots, mutable values, or values that
+- [x] Write down the contract for `queryN`, `queryN_entities`, and `eachN`.
+- [x] Decide whether `queryN` returns snapshots, mutable values, or values that
       must be explicitly written back.
-- [ ] Keep `eachN` writeback behavior explicit and tested.
-- [ ] Add tests for mutation persistence through `each2` and `each3`.
-- [ ] Add tests for despawn, component insertion, and component removal during
+- [x] Keep `eachN` writeback behavior explicit and tested.
+- [x] Add tests for mutation persistence through `each2` and `each3`.
+- [x] Add tests for despawn, component insertion, and component removal during
       iteration.
-- [ ] Decide whether direct world mutation during iteration is supported,
+- [x] Decide whether direct world mutation during iteration is supported,
       discouraged, or blocked by command buffers.
 
 Acceptance criteria:
 
-- [ ] A system author can predict exactly when component changes become visible.
-- [ ] Iteration behavior remains deterministic when entities are changed
+- [x] A system author can predict exactly when component changes become visible.
+- [x] Iteration behavior remains deterministic when entities are changed
       mid-frame.
-- [ ] The README shows the recommended mutation pattern.
+- [x] The README shows the recommended mutation pattern.
 
 ## Phase 3: Command Buffer
 
 Goal: support safe deferred world mutation from systems.
 
-- [ ] Add a `Commands` or `CommandBuffer` type.
+- [ ] Add a `Commands` type.
 - [ ] Support deferred `spawn`, `despawn`, `insert_component`,
       `remove_component`, `set_resource`, and `remove_resource`.
 - [ ] Add `World::apply_commands`.

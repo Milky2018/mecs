@@ -49,8 +49,8 @@ pub fn World::World() -> Self
 pub fn World::add_system(Self, System) -> Unit
 pub fn World::add_system_fn(Self, (Self) -> Unit, name? : String) -> Unit
 pub fn World::despawn(Self, UInt) -> Bool
-pub fn[A : ComponentValue, B : ComponentValue] World::each2(Self, (A, B) -> Unit) -> Unit
-pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::each3(Self, (A, B, C) -> Unit) -> Unit
+pub fn[A : ComponentValue, B : ComponentValue] World::each2(Self, (A, B) -> Unit) -> Unit raise NotSpawned
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::each3(Self, (A, B, C) -> Unit) -> Unit raise NotSpawned
 pub fn World::entity_ops(Self, UInt) -> EntityOps
 pub fn[C : ComponentValue] World::get_component(Self, UInt) -> C?
 pub fn[R : ResourceValue] World::get_resource(Self) -> R

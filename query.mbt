@@ -127,13 +127,13 @@ pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3
 pub fn[A : ComponentValue, B : ComponentValue] World::each2(
   self : World,
   f : (A, B) -> Unit,
-) -> Unit {
+) -> Unit raise NotSpawned {
   let rows : Array[(EntityId, (A, B))] = self.query2_entities().to_array()
   for row in rows {
     let (entity, (a, b)) = row
     f(a, b)
-    try! self.insert_component(entity, a)
-    try! self.insert_component(entity, b)
+    self.insert_component(entity, a)
+    self.insert_component(entity, b)
   }
 }
 
@@ -141,13 +141,13 @@ pub fn[A : ComponentValue, B : ComponentValue] World::each2(
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::each3(
   self : World,
   f : (A, B, C) -> Unit,
-) -> Unit {
+) -> Unit raise NotSpawned {
   let rows : Array[(EntityId, (A, B, C))] = self.query3_entities().to_array()
   for row in rows {
     let (entity, (a, b, c)) = row
     f(a, b, c)
-    try! self.insert_component(entity, a)
-    try! self.insert_component(entity, b)
-    try! self.insert_component(entity, c)
+    self.insert_component(entity, a)
+    self.insert_component(entity, b)
+    self.insert_component(entity, c)
   }
 }

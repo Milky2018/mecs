@@ -99,7 +99,10 @@ impl @mecs.ResourceValue for ReadmeFrame with from_resource(resource) {
 
 ///|
 fn readme_move_system(world : @mecs.World) -> Unit {
-  world.each2(fn(velocity : ReadmeVelocity, position : ReadmePosition) -> Unit {
+  try! world.each2(fn(
+    velocity : ReadmeVelocity,
+    position : ReadmePosition,
+  ) -> Unit {
     position.x += velocity.x
     position.y += velocity.y
   })
@@ -142,3 +145,24 @@ the same slot, and typed reads for the other variant return `None`.
 `World::insert_component` and `EntityOps::insert_component` return `Unit`. If
 the target entity has not been spawned or has already been despawned, they raise
 `NotSpawned(entity)`.
+
+## Mutation Semantics
+
+`query1`, `query2`, `query3`, and their `queryN_entities` variants are lazy read
+queries. They yield component values from the world and do not write changes
+back by themselves.
+
+`each2` and `each3` are the supported mutating query helpers. They first
+materialize the matching rows, then call the user callback for each row, then
+write the queried components back to the same entity. This means components
+mutated inside the callback persist after `eachN` returns.
+
+Rows are snapshotted before callbacks run. Entities spawned during an `eachN`
+callback are not visited by that same `eachN` call. Non-queried components can be
+inserted or removed during the callback and those structural changes persist.
+If the yielded entity itself is despawned before `eachN` writes components back,
+`eachN` raises `NotSpawned(entity)`.
+
+Until command buffers are added, avoid structurally mutating the same queried
+component slots inside an `eachN` callback. The callback-owned values are written
+back after the callback, so that writeback wins deterministically.
