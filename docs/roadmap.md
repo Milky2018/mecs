@@ -194,6 +194,8 @@ Optimization backlog:
       allocating result arrays for system-style query loops.
 - [x] Make streaming traversal helpers drive directly from the chosen component
       store instead of consuming `queryN_entities`.
+- [x] Add benchmark coverage for `query1`, `query2`, `for_each2`, `query3`,
+      and `for_each3` query styles.
 - [x] Improve component removal by going directly to component-id storage when
       sparse storage exists.
 - [x] Evaluate despawn bookkeeping strategies for sparse storage: use eager

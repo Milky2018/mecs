@@ -25,6 +25,8 @@ The baseline ECS benchmark suite lives in `mecs_bench_test.mbt` and covers:
 - inserting 1000 components
 - removing 1000 components
 - `query1` over 1000 entities
+- `query2` over 1000 entities
+- `for_each2` over 1000 entities
 - `query3` over 1000 entities
 - sparse `query3` over 1000 entities with one matching component on one in four
   entities
@@ -64,10 +66,10 @@ Recorded on 2026-05-08 with:
 moon bench --target native --release
 ```
 
-| Storage | Spawn 1000 | Despawn 1000 | Insert 1000 | Remove 1000 | Query1 1000 | Dense Query3 1000 | Dense for_each3 1000 | Sparse Query3 1000 | Sparse for_each3 1000 | Resource 1000 |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Original nested maps | 118.21 us | 163.29 us | 196.04 us | 480.26 us | N/A | 181.69 us | N/A | N/A | N/A | 107.25 us |
-| HashMap component columns + direct probes | 103.15 us | 151.00 us | 242.09 us | 615.02 us | 16.36 us | 50.41 us | 30.27 us | 12.63 us | 6.81 us | 106.71 us |
+| Storage | Spawn 1000 | Despawn 1000 | Insert 1000 | Remove 1000 | Query1 1000 | Dense Query2 1000 | Dense for_each2 1000 | Dense Query3 1000 | Dense for_each3 1000 | Sparse Query3 1000 | Sparse for_each3 1000 | Resource 1000 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Original nested maps | 118.21 us | 163.29 us | 196.04 us | 480.26 us | N/A | N/A | N/A | 181.69 us | N/A | N/A | N/A | 107.25 us |
+| HashMap component columns + direct probes | 104.85 us | 155.46 us | 240.73 us | 585.39 us | 15.93 us | 36.15 us | 16.84 us | 48.48 us | 29.73 us | 12.76 us | 6.66 us | 105.84 us |
 
 The current storage is query-oriented. Dense `query3` is about 30% faster on
 native from the column-store layout alone, and direct cached store probes bring

@@ -151,6 +151,26 @@ fn checksum_bench_rows(
 }
 
 ///|
+fn checksum_bench_pair_rows(
+  rows : Array[(BenchPosition, BenchVelocity)],
+) -> Int {
+  let mut total = 0
+  for row in rows {
+    let (position, velocity) = row
+    total += position.x + position.y + velocity.x + velocity.y
+  }
+  total
+}
+
+///|
+fn checksum_bench_pair(
+  position : BenchPosition,
+  velocity : BenchVelocity,
+) -> Int {
+  position.x + position.y + velocity.x + velocity.y
+}
+
+///|
 fn checksum_bench_row(
   position : BenchPosition,
   velocity : BenchVelocity,
@@ -225,6 +245,20 @@ test "bench ecs: query" (b : @bench.T) {
       total += position.x + position.y
     }
     b.keep(total)
+  })
+  b.bench(name="query2 over 1000 entities", count=100U, fn() {
+    let rows : Array[(BenchPosition, BenchVelocity)] = world.query2().to_array()
+    b.keep(checksum_bench_pair_rows(rows))
+  })
+  b.bench(name="for_each2 over 1000 entities", count=100U, fn() {
+    let total = Ref(0)
+    world.for_each2(fn(
+      position : BenchPosition,
+      velocity : BenchVelocity,
+    ) -> Unit {
+      total.val += checksum_bench_pair(position, velocity)
+    })
+    b.keep(total.val)
   })
   b.bench(name="query3 over 1000 entities", count=100U, fn() {
     let rows : Array[(BenchPosition, BenchVelocity, BenchHealth)] = world
