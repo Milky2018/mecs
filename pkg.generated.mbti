@@ -107,6 +107,8 @@ pub fn World::entity_ops(Self, UInt) -> EntityOps
 pub fn World::fixed_step(Self) -> Unit raise NotSpawned
 pub fn[A : ComponentValue, B : ComponentValue] World::for_each2(Self, (A, B) -> Unit) -> Unit
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::for_each3(Self, (A, B, C) -> Unit) -> Unit
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue] World::for_each4(Self, (A, B, C, D) -> Unit) -> Unit
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue, E : ComponentValue] World::for_each5(Self, (A, B, C, D, E) -> Unit) -> Unit
 pub fn[C : ComponentValue] World::get_component(Self, UInt) -> C?
 pub fn[C : ComponentValue] World::get_component_checked(Self, UInt) -> C raise EcsError
 pub fn[R : ResourceValue] World::get_resource(Self) -> R

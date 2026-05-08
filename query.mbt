@@ -1072,6 +1072,250 @@ pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::for_ea
 }
 
 ///|
+pub fn[
+  A : ComponentValue,
+  B : ComponentValue,
+  C : ComponentValue,
+  D : ComponentValue,
+] World::for_each4(
+  self : World,
+  f : (A, B, C, D) -> Unit,
+) -> Unit {
+  let a_id = A::component_id()
+  let b_id = B::component_id()
+  let c_id = C::component_id()
+  let d_id = D::component_id()
+  let a_len = self.component_store_len(a_id)
+  let b_len = self.component_store_len(b_id)
+  let c_len = self.component_store_len(c_id)
+  let d_len = self.component_store_len(d_id)
+  if a_len <= b_len && a_len <= c_len && a_len <= d_len {
+    match self.component_store(a_id) {
+      Some(a_store) => {
+        let b_store = self.component_store(b_id)
+        let c_store = self.component_store(c_id)
+        let d_store = self.component_store(d_id)
+        a_store.each(fn(entity, component) {
+          match
+            (
+              A::from_component(component),
+              component_from_store(b_store, entity),
+              component_from_store(c_store, entity),
+              component_from_store(d_store, entity),
+            ) {
+            (Some(a), Some(b), Some(c), Some(d)) => f(a, b, c, d)
+            _ => ()
+          }
+        })
+      }
+      None => ()
+    }
+  } else if b_len <= c_len && b_len <= d_len {
+    match self.component_store(b_id) {
+      Some(b_store) => {
+        let a_store = self.component_store(a_id)
+        let c_store = self.component_store(c_id)
+        let d_store = self.component_store(d_id)
+        b_store.each(fn(entity, component) {
+          match
+            (
+              component_from_store(a_store, entity),
+              B::from_component(component),
+              component_from_store(c_store, entity),
+              component_from_store(d_store, entity),
+            ) {
+            (Some(a), Some(b), Some(c), Some(d)) => f(a, b, c, d)
+            _ => ()
+          }
+        })
+      }
+      None => ()
+    }
+  } else if c_len <= d_len {
+    match self.component_store(c_id) {
+      Some(c_store) => {
+        let a_store = self.component_store(a_id)
+        let b_store = self.component_store(b_id)
+        let d_store = self.component_store(d_id)
+        c_store.each(fn(entity, component) {
+          match
+            (
+              component_from_store(a_store, entity),
+              component_from_store(b_store, entity),
+              C::from_component(component),
+              component_from_store(d_store, entity),
+            ) {
+            (Some(a), Some(b), Some(c), Some(d)) => f(a, b, c, d)
+            _ => ()
+          }
+        })
+      }
+      None => ()
+    }
+  } else {
+    match self.component_store(d_id) {
+      Some(d_store) => {
+        let a_store = self.component_store(a_id)
+        let b_store = self.component_store(b_id)
+        let c_store = self.component_store(c_id)
+        d_store.each(fn(entity, component) {
+          match
+            (
+              component_from_store(a_store, entity),
+              component_from_store(b_store, entity),
+              component_from_store(c_store, entity),
+              D::from_component(component),
+            ) {
+            (Some(a), Some(b), Some(c), Some(d)) => f(a, b, c, d)
+            _ => ()
+          }
+        })
+      }
+      None => ()
+    }
+  }
+}
+
+///|
+pub fn[
+  A : ComponentValue,
+  B : ComponentValue,
+  C : ComponentValue,
+  D : ComponentValue,
+  E : ComponentValue,
+] World::for_each5(
+  self : World,
+  f : (A, B, C, D, E) -> Unit,
+) -> Unit {
+  let a_id = A::component_id()
+  let b_id = B::component_id()
+  let c_id = C::component_id()
+  let d_id = D::component_id()
+  let e_id = E::component_id()
+  let a_len = self.component_store_len(a_id)
+  let b_len = self.component_store_len(b_id)
+  let c_len = self.component_store_len(c_id)
+  let d_len = self.component_store_len(d_id)
+  let e_len = self.component_store_len(e_id)
+  if a_len <= b_len && a_len <= c_len && a_len <= d_len && a_len <= e_len {
+    match self.component_store(a_id) {
+      Some(a_store) => {
+        let b_store = self.component_store(b_id)
+        let c_store = self.component_store(c_id)
+        let d_store = self.component_store(d_id)
+        let e_store = self.component_store(e_id)
+        a_store.each(fn(entity, component) {
+          match
+            (
+              A::from_component(component),
+              component_from_store(b_store, entity),
+              component_from_store(c_store, entity),
+              component_from_store(d_store, entity),
+              component_from_store(e_store, entity),
+            ) {
+            (Some(a), Some(b), Some(c), Some(d), Some(e)) => f(a, b, c, d, e)
+            _ => ()
+          }
+        })
+      }
+      None => ()
+    }
+  } else if b_len <= c_len && b_len <= d_len && b_len <= e_len {
+    match self.component_store(b_id) {
+      Some(b_store) => {
+        let a_store = self.component_store(a_id)
+        let c_store = self.component_store(c_id)
+        let d_store = self.component_store(d_id)
+        let e_store = self.component_store(e_id)
+        b_store.each(fn(entity, component) {
+          match
+            (
+              component_from_store(a_store, entity),
+              B::from_component(component),
+              component_from_store(c_store, entity),
+              component_from_store(d_store, entity),
+              component_from_store(e_store, entity),
+            ) {
+            (Some(a), Some(b), Some(c), Some(d), Some(e)) => f(a, b, c, d, e)
+            _ => ()
+          }
+        })
+      }
+      None => ()
+    }
+  } else if c_len <= d_len && c_len <= e_len {
+    match self.component_store(c_id) {
+      Some(c_store) => {
+        let a_store = self.component_store(a_id)
+        let b_store = self.component_store(b_id)
+        let d_store = self.component_store(d_id)
+        let e_store = self.component_store(e_id)
+        c_store.each(fn(entity, component) {
+          match
+            (
+              component_from_store(a_store, entity),
+              component_from_store(b_store, entity),
+              C::from_component(component),
+              component_from_store(d_store, entity),
+              component_from_store(e_store, entity),
+            ) {
+            (Some(a), Some(b), Some(c), Some(d), Some(e)) => f(a, b, c, d, e)
+            _ => ()
+          }
+        })
+      }
+      None => ()
+    }
+  } else if d_len <= e_len {
+    match self.component_store(d_id) {
+      Some(d_store) => {
+        let a_store = self.component_store(a_id)
+        let b_store = self.component_store(b_id)
+        let c_store = self.component_store(c_id)
+        let e_store = self.component_store(e_id)
+        d_store.each(fn(entity, component) {
+          match
+            (
+              component_from_store(a_store, entity),
+              component_from_store(b_store, entity),
+              component_from_store(c_store, entity),
+              D::from_component(component),
+              component_from_store(e_store, entity),
+            ) {
+            (Some(a), Some(b), Some(c), Some(d), Some(e)) => f(a, b, c, d, e)
+            _ => ()
+          }
+        })
+      }
+      None => ()
+    }
+  } else {
+    match self.component_store(e_id) {
+      Some(e_store) => {
+        let a_store = self.component_store(a_id)
+        let b_store = self.component_store(b_id)
+        let c_store = self.component_store(c_id)
+        let d_store = self.component_store(d_id)
+        e_store.each(fn(entity, component) {
+          match
+            (
+              component_from_store(a_store, entity),
+              component_from_store(b_store, entity),
+              component_from_store(c_store, entity),
+              component_from_store(d_store, entity),
+              E::from_component(component),
+            ) {
+            (Some(a), Some(b), Some(c), Some(d), Some(e)) => f(a, b, c, d, e)
+            _ => ()
+          }
+        })
+      }
+      None => ()
+    }
+  }
+}
+
+///|
 pub fn[A : ComponentValue, B : ComponentValue] World::each2(
   self : World,
   f : (A, B) -> Unit,

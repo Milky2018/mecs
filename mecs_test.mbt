@@ -479,6 +479,67 @@ test "for_each3 streams rows without snapshot writeback" {
 }
 
 ///|
+test "for_each4 and for_each5 stream wide rows" {
+  let world4 = @mecs.World()
+  let entity4 = world4.spawn_with(
+    (
+      Position::{ x: 1, y: 2 },
+      Velocity::{ x: 3, y: 4 },
+      Health::{ value: 5 },
+      Mana::{ value: 6 },
+    ),
+  )
+  let total4 = Ref(0)
+  world4.for_each4(fn(
+    pos : Position,
+    vel : Velocity,
+    health : Health,
+    mana : Mana,
+  ) -> Unit {
+    total4.val += pos.x + pos.y + vel.x + vel.y + health.value + mana.value
+    pos.x = 40
+    health.value = 50
+  })
+  let pos4 : Position = world4.require_component(entity4)
+  let health4 : Health = world4.require_component(entity4)
+  inspect(total4.val, content="21")
+  inspect((pos4.x, pos4.y, health4.value), content="(40, 2, 50)")
+
+  let world5 = @mecs.World()
+  let entity5 = world5.spawn_with(
+    (
+      Position::{ x: 1, y: 2 },
+      Velocity::{ x: 3, y: 4 },
+      Health::{ value: 5 },
+      Mana::{ value: 6 },
+    ),
+  )
+  try! world5.insert_component(entity5, Armor::{ value: 7 })
+  let total5 = Ref(0)
+  world5.for_each5(fn(
+    pos : Position,
+    vel : Velocity,
+    health : Health,
+    mana : Mana,
+    armor : Armor,
+  ) -> Unit {
+    total5.val += pos.x +
+      pos.y +
+      vel.x +
+      vel.y +
+      health.value +
+      mana.value +
+      armor.value
+    pos.x = 60
+    health.value = 70
+  })
+  let pos5 : Position = world5.require_component(entity5)
+  let health5 : Health = world5.require_component(entity5)
+  inspect(total5.val, content="28")
+  inspect((pos5.x, pos5.y, health5.value), content="(60, 2, 70)")
+}
+
+///|
 test "each2 snapshots rows and keeps nonqueried structural changes" {
   let world = @mecs.World()
   let entity = world.spawn_with(

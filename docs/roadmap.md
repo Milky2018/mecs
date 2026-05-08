@@ -196,6 +196,8 @@ Optimization backlog:
       requested.
 - [x] Add streaming `for_each2` and `for_each3` traversal helpers to avoid
       allocating result arrays for system-style query loops.
+- [x] Add streaming `for_each4` and `for_each5` traversal helpers to avoid
+      allocating result arrays for wider system-style query loops.
 - [x] Make streaming traversal helpers drive directly from the chosen component
       store instead of consuming `queryN_entities`.
 - [x] Add benchmark coverage for `query1`, `query2`, `for_each2`, `query3`,

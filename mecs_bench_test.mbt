@@ -247,6 +247,16 @@ fn checksum_bench_quad_rows(
 }
 
 ///|
+fn checksum_bench_quad(
+  position : BenchPosition,
+  velocity : BenchVelocity,
+  health : BenchHealth,
+  armor : BenchArmor,
+) -> Int {
+  position.x + position.y + velocity.x + velocity.y + health.value + armor.value
+}
+
+///|
 fn checksum_bench_quint_rows(
   rows : Array[
     (BenchPosition, BenchVelocity, BenchHealth, BenchArmor, BenchMana),
@@ -264,6 +274,23 @@ fn checksum_bench_quint_rows(
       mana.value
   }
   total
+}
+
+///|
+fn checksum_bench_quint(
+  position : BenchPosition,
+  velocity : BenchVelocity,
+  health : BenchHealth,
+  armor : BenchArmor,
+  mana : BenchMana,
+) -> Int {
+  position.x +
+  position.y +
+  velocity.x +
+  velocity.y +
+  health.value +
+  armor.value +
+  mana.value
 }
 
 ///|
@@ -400,12 +427,37 @@ test "bench ecs: query" (b : @bench.T) {
       .to_array()
     b.keep(checksum_bench_quad_rows(rows))
   })
+  b.bench(name="for_each4 over 1000 entities", count=100U, fn() {
+    let total = Ref(0)
+    world4.for_each4(fn(
+      position : BenchPosition,
+      velocity : BenchVelocity,
+      health : BenchHealth,
+      armor : BenchArmor,
+    ) -> Unit {
+      total.val += checksum_bench_quad(position, velocity, health, armor)
+    })
+    b.keep(total.val)
+  })
   let world5 = build_bench_world5(bench_size)
   b.bench(name="query5 over 1000 entities", count=100U, fn() {
     let rows : Array[
       (BenchPosition, BenchVelocity, BenchHealth, BenchArmor, BenchMana),
     ] = world5.query5().to_array()
     b.keep(checksum_bench_quint_rows(rows))
+  })
+  b.bench(name="for_each5 over 1000 entities", count=100U, fn() {
+    let total = Ref(0)
+    world5.for_each5(fn(
+      position : BenchPosition,
+      velocity : BenchVelocity,
+      health : BenchHealth,
+      armor : BenchArmor,
+      mana : BenchMana,
+    ) -> Unit {
+      total.val += checksum_bench_quint(position, velocity, health, armor, mana)
+    })
+    b.keep(total.val)
   })
 }
 
