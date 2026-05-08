@@ -461,6 +461,24 @@ test "each3 persists component mutations" {
 }
 
 ///|
+test "for_each3 streams rows without snapshot writeback" {
+  let world = @mecs.World()
+  let entity = world.spawn_with(
+    (Position::{ x: 1, y: 1 }, Velocity::{ x: 2, y: 3 }, Health::{ value: 4 }),
+  )
+  let total = Ref(0)
+  world.for_each3(fn(pos : Position, vel : Velocity, health : Health) -> Unit {
+    total.val += pos.x + pos.y + vel.x + vel.y + health.value
+    pos.x = 99
+    health.value = 99
+  })
+  let pos : Position = world.require_component(entity)
+  let health : Health = world.require_component(entity)
+  inspect(total.val, content="11")
+  inspect((pos.x, pos.y, health.value), content="(99, 1, 99)")
+}
+
+///|
 test "each2 snapshots rows and keeps nonqueried structural changes" {
   let world = @mecs.World()
   let entity = world.spawn_with(

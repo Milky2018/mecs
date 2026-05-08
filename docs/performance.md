@@ -63,19 +63,20 @@ Recorded on 2026-05-08 with:
 moon bench --target native --release
 ```
 
-| Storage | Spawn 1000 | Despawn 1000 | Insert 1000 | Remove 1000 | Dense Query3 1000 | Sparse Query3 1000 | Resource 1000 |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| Original nested maps | 118.21 us | 163.29 us | 196.04 us | 480.26 us | 181.69 us | N/A | 107.25 us |
-| HashMap component columns + direct probes | 110.24 us | 153.59 us | 250.52 us | 612.55 us | 58.95 us | 14.79 us | 106.87 us |
+| Storage | Spawn 1000 | Despawn 1000 | Insert 1000 | Remove 1000 | Dense Query3 1000 | Dense for_each3 1000 | Sparse Query3 1000 | Sparse for_each3 1000 | Resource 1000 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Original nested maps | 118.21 us | 163.29 us | 196.04 us | 480.26 us | 181.69 us | N/A | N/A | N/A | 107.25 us |
+| HashMap component columns + direct probes | 108.56 us | 153.57 us | 242.39 us | 591.97 us | 58.03 us | 51.15 us | 14.14 us | 12.36 us | 104.17 us |
 
 The current storage is query-oriented. Dense `query3` is about 30% faster on
 native from the column-store layout alone, and direct cached store probes bring
 the measured dense `query3` to about three times faster than the original nested
 map baseline. Sparse `query3` can drive from the smallest component column and
-avoid repeated component-id/store lookup work. Insert and remove are slower
-because writes maintain both the entity component-id list and the component
-column. The remove benchmark also includes world construction, so it captures
-part of the insertion cost.
+avoid repeated component-id/store lookup work. `for_each3` avoids the result
+array allocation used by `query3().to_array()` and is faster for streaming
+traversals. Insert and remove are slower because writes maintain both the entity
+component-id list and the component column. The remove benchmark also includes
+world construction, so it captures part of the insertion cost.
 
 ## Storage Comparison
 
@@ -168,12 +169,15 @@ component id in its own `@hashmap.HashMap[EntityId, Component]`:
   component tables.
 - Query iterators cache the chosen component stores and probe them directly
   instead of calling `World::get_component` for each candidate entity.
+- `for_each2` and `for_each3` provide streaming traversal when callers do not
+  need an allocated result array.
 
 Expected benefits:
 
 - Fewer component-id lookups inside wide queries.
 - Better query locality for common component types.
 - Faster component removal when the component id table is already known.
+- Lower allocation overhead for system-style query traversal.
 
 Costs and risks:
 

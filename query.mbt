@@ -536,6 +536,34 @@ pub fn[
 }
 
 ///|
+pub fn[A : ComponentValue, B : ComponentValue] World::for_each2(
+  self : World,
+  f : (A, B) -> Unit,
+) -> Unit {
+  let it = self.query2_entities()
+  for ;; {
+    match it.next() {
+      Some((_entity, (a, b))) => f(a, b)
+      None => break
+    }
+  }
+}
+
+///|
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::for_each3(
+  self : World,
+  f : (A, B, C) -> Unit,
+) -> Unit {
+  let it = self.query3_entities()
+  for ;; {
+    match it.next() {
+      Some((_entity, (a, b, c))) => f(a, b, c)
+      None => break
+    }
+  }
+}
+
+///|
 pub fn[A : ComponentValue, B : ComponentValue] World::each2(
   self : World,
   f : (A, B) -> Unit,

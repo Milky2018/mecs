@@ -186,6 +186,8 @@ Optimization backlog:
       driving component deterministically.
 - [x] Cache component stores inside query iterators and probe them directly
       instead of repeatedly calling `World::get_component`.
+- [x] Add streaming `for_each2` and `for_each3` traversal helpers to avoid
+      allocating result arrays for system-style query loops.
 - [x] Improve component removal by going directly to component-id storage when
       sparse storage exists.
 - [x] Evaluate despawn bookkeeping strategies for sparse storage: use eager

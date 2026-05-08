@@ -195,6 +195,12 @@ queries. They yield component values from the world and do not write changes
 back by themselves. Entity-returning query variants consistently return
 `Iter2[EntityId, (...)]`, with `query1_entities` returning `Iter2[EntityId, C]`.
 
+`for_each2` and `for_each3` are streaming query helpers. They avoid allocating
+an intermediate result array and do not snapshot rows or perform explicit
+writeback. If a component value contains mutable state, mutating it inside the
+callback can still affect the stored component immediately. Use these helpers
+for non-structural traversals and reductions.
+
 `each2` and `each3` are the supported mutating query helpers. They first
 materialize the matching rows, then call the user callback for each row, then
 write the queried components back to the same entity. This means components

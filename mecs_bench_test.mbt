@@ -151,6 +151,15 @@ fn checksum_bench_rows(
 }
 
 ///|
+fn checksum_bench_row(
+  position : BenchPosition,
+  velocity : BenchVelocity,
+  health : BenchHealth,
+) -> Int {
+  position.x + position.y + velocity.x + velocity.y + health.value
+}
+
+///|
 test "bench ecs: spawn" (b : @bench.T) {
   b.bench(name="spawn 1000 entities", count=20U, fn() {
     let world = @mecs.World()
@@ -215,6 +224,17 @@ test "bench ecs: query" (b : @bench.T) {
       .to_array()
     b.keep(checksum_bench_rows(rows))
   })
+  b.bench(name="for_each3 over 1000 entities", count=100U, fn() {
+    let total = Ref(0)
+    world.for_each3(fn(
+      position : BenchPosition,
+      velocity : BenchVelocity,
+      health : BenchHealth,
+    ) -> Unit {
+      total.val += checksum_bench_row(position, velocity, health)
+    })
+    b.keep(total.val)
+  })
 }
 
 ///|
@@ -225,6 +245,17 @@ test "bench ecs: sparse query" (b : @bench.T) {
       .query3()
       .to_array()
     b.keep(checksum_bench_rows(rows))
+  })
+  b.bench(name="sparse for_each3 over 1000 entities", count=100U, fn() {
+    let total = Ref(0)
+    world.for_each3(fn(
+      position : BenchPosition,
+      velocity : BenchVelocity,
+      health : BenchHealth,
+    ) -> Unit {
+      total.val += checksum_bench_row(position, velocity, health)
+    })
+    b.keep(total.val)
   })
 }
 
