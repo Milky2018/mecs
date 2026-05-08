@@ -15,6 +15,11 @@ pub fn ComponentId::name(self : Self) -> String {
 }
 
 ///|
+pub fn component_id(name : String) -> ComponentId {
+  ComponentId(name)
+}
+
+///|
 pub struct ResourceId {
   name : String
 } derive(Eq, Hash, Debug)
@@ -28,6 +33,11 @@ pub fn ResourceId::ResourceId(name : String) -> Self {
 ///|
 pub fn ResourceId::name(self : Self) -> String {
   self.name
+}
+
+///|
+pub fn resource_id(name : String) -> ResourceId {
+  ResourceId(name)
 }
 
 ///|

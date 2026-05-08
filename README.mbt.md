@@ -11,8 +11,9 @@ Users extend `@mecs.Component` and `@mecs.Resource`, then implement
 `resource_id` must be exactly the same text as the extensible enum variant
 constructor name. The full constructor forms are
 `@mecs.ComponentId::ComponentId("VariantName")` and
-`@mecs.ResourceId::ResourceId("VariantName")`; the checked example below uses
-MoonBit's shorter constructor syntax where the return type is already known.
+`@mecs.ResourceId::ResourceId("VariantName")`. The helper functions
+`component_id("VariantName")` and `resource_id("VariantName")` make the common
+case shorter while preserving the same invariant.
 
 ```mbt check
 ///|
@@ -45,7 +46,7 @@ extenum @mecs.Resource += {
 
 ///|
 impl @mecs.ComponentValue for ReadmePosition with component_id() {
-  ComponentId("ReadmePosition")
+  component_id("ReadmePosition")
 }
 
 ///|
@@ -63,7 +64,7 @@ impl @mecs.ComponentValue for ReadmePosition with from_component(component) {
 
 ///|
 impl @mecs.ComponentValue for ReadmeVelocity with component_id() {
-  ComponentId("ReadmeVelocity")
+  component_id("ReadmeVelocity")
 }
 
 ///|
@@ -81,7 +82,7 @@ impl @mecs.ComponentValue for ReadmeVelocity with from_component(component) {
 
 ///|
 impl @mecs.ResourceValue for ReadmeFrame with resource_id() {
-  ResourceId("ReadmeFrame")
+  resource_id("ReadmeFrame")
 }
 
 ///|
@@ -127,10 +128,17 @@ test "readme quick start" {
   |> ignore
   try! world.step()
   let position : ReadmePosition = world.require_component(entity)
+  let rows : Array[(@mecs.EntityId, (ReadmeVelocity, ReadmePosition))] = world
+    .query2_entities()
+    .to_array()
   inspect((position.x, position.y), content="(2, 3)")
   inspect((world.get_resource() : ReadmeFrame).value, content="1")
+  inspect(rows.length(), content="1")
 }
 ```
+
+See [examples/basic](/examples/basic) for the same pattern as a complete tested
+package.
 
 ## Id Invariant
 
@@ -139,6 +147,10 @@ extensible enum value into that slot. `from_component` and `from_resource`
 verify that the stored enum variant really belongs to the requested type. If two
 types intentionally or accidentally use the same id, the newer value overwrites
 the same slot, and typed reads for the other variant return `None`.
+
+See [docs/ergonomics.md](/docs/ergonomics.md) for copyable component and
+resource templates, and [docs/migration.md](/docs/migration.md) for migration
+notes from the earlier experimental designs.
 
 ## Insert Failures
 

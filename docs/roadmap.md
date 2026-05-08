@@ -136,19 +136,19 @@ Acceptance criteria:
 
 Goal: reduce boilerplate without weakening the model.
 
-- [ ] Improve README examples for components, resources, systems, and queries.
-- [ ] Add a complete small example package or executable.
-- [ ] Investigate whether MoonBit tooling can generate repetitive
+- [x] Improve README examples for components, resources, systems, and queries.
+- [x] Add a complete small example package or executable.
+- [x] Investigate whether MoonBit tooling can generate repetitive
       `ComponentValue` and `ResourceValue` impls.
-- [ ] Add helper functions or naming conventions for common id patterns.
-- [ ] Provide migration notes from the previous experimental versions.
+- [x] Add helper functions or naming conventions for common id patterns.
+- [x] Provide migration notes from the previous experimental versions.
 
 Acceptance criteria:
 
-- [ ] A new user can define a component and run a system from the README alone.
-- [ ] The common component/resource boilerplate is either minimal or
+- [x] A new user can define a component and run a system from the README alone.
+- [x] The common component/resource boilerplate is either minimal or
       mechanically generated.
-- [ ] Examples are covered by tests where possible.
+- [x] Examples are covered by tests where possible.
 
 ## Phase 8: Performance And Storage
 

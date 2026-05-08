@@ -6,6 +6,9 @@ import {
 }
 
 // Values
+pub fn component_id(String) -> ComponentId
+
+pub fn resource_id(String) -> ResourceId
 
 // Errors
 pub(all) suberror EcsError {

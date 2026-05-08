@@ -632,8 +632,10 @@ test "entity ops insert reports dead entity failure" {
 test "component ids are opaque and use variant names" {
   let id : @mecs.ComponentId = ComponentId("Position")
   inspect(id.name(), content="Position")
+  inspect(@mecs.component_id("Velocity").name(), content="Velocity")
   let resource_id : @mecs.ResourceId = ResourceId("StepCount")
   inspect(resource_id.name(), content="StepCount")
+  inspect(@mecs.resource_id("StepCount").name(), content="StepCount")
 }
 
 ///|
