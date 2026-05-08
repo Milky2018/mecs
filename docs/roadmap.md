@@ -117,20 +117,20 @@ Acceptance criteria:
 
 Goal: avoid abort-first APIs in production paths.
 
-- [ ] Keep `require_component` and `get_resource` as convenience APIs.
-- [ ] Add safe alternatives for all APIs that can fail.
-- [ ] Consider typed errors for entity-not-found, component-not-found,
+- [x] Keep `require_component` and `get_resource` as convenience APIs.
+- [x] Add safe alternatives for all APIs that can fail.
+- [x] Consider typed errors for entity-not-found, component-not-found,
       resource-not-found, and id/variant mismatch.
-- [ ] Document when an API returns `None`, returns `false`, returns an error, or
+- [x] Document when an API returns `None`, returns `false`, returns an error, or
       aborts.
-- [ ] Add tests for every failure mode.
+- [x] Add tests for every failure mode.
 
 Acceptance criteria:
 
-- [ ] Production code can avoid aborting on expected missing ECS state.
-- [ ] Failure behavior is consistent across components, resources, and
+- [x] Production code can avoid aborting on expected missing ECS state.
+- [x] Failure behavior is consistent across components, resources, and
       entities.
-- [ ] The generated interface makes safe APIs obvious.
+- [x] The generated interface makes safe APIs obvious.
 
 ## Phase 7: Ergonomics
 

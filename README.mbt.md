@@ -146,6 +146,35 @@ the same slot, and typed reads for the other variant return `None`.
 the target entity has not been spawned or has already been despawned, they raise
 `NotSpawned(entity)`.
 
+## Failure Model
+
+The library keeps convenience APIs for small examples while exposing checked
+APIs for production paths.
+
+`get_component`, `try_get_resource`, `has_component`, and `has_resource` are
+non-raising absence checks. They return `None` or `false` when state is missing,
+and component/resource reads also return absence when an id exists but stores a
+different extensible-enum variant.
+
+`despawn` returns `false` when the entity is not alive. `remove_component` and
+`remove_resource` are idempotent and return `Unit`; missing targets are no-ops.
+
+`require_component` and `get_resource` are convenience APIs. They abort when the
+requested value is absent and should not be used for expected-missing production
+state.
+
+Checked APIs report expected failures with `EcsError`: `despawn_checked`,
+`insert_component_checked`, `get_component_checked`,
+`remove_component_checked`, `get_resource_checked`, and
+`remove_resource_checked`. `EntityOps` exposes checked variants for insert,
+remove, and despawn as well. These APIs distinguish `EntityMissing`,
+`ComponentMissing`, `ComponentVariantMismatch`, `ResourceMissing`, and
+`ResourceVariantMismatch`.
+
+`insert_component`, `EntityOps::insert_component`, `apply_commands`, `each2`,
+`each3`, `step`, `fixed_step`, and `run_stage` raise `NotSpawned` when a write
+targets an entity that is not alive.
+
 ## Mutation Semantics
 
 `query1` through `query5`, and their `queryN_entities` variants, are lazy read

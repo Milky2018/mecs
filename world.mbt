@@ -65,6 +65,14 @@ pub fn World::despawn(self : Self, entity : EntityId) -> Bool {
 }
 
 ///|
+pub fn World::despawn_checked(
+  self : Self,
+  entity : EntityId,
+) -> Unit raise EcsError {
+  guard self.despawn(entity) else { raise EntityMissing(entity) }
+}
+
+///|
 fn World::component_map(
   self : Self,
   entity : EntityId,
@@ -98,6 +106,17 @@ fn World::insert_component_value(
 }
 
 ///|
+pub fn[C : ComponentValue] World::insert_component_checked(
+  self : Self,
+  entity : EntityId,
+  component : C,
+) -> Unit raise EcsError {
+  guard self.is_alive(entity) else { raise EntityMissing(entity) }
+  let map = self.components.get_or_init(entity, fn() { {} })
+  map[C::component_id()] = C::to_component(component)
+}
+
+///|
 pub fn[C : ComponentValue] World::has_component(
   self : Self,
   entity : EntityId,
@@ -123,6 +142,27 @@ pub fn[C : ComponentValue] World::get_component(
 }
 
 ///|
+pub fn[C : ComponentValue] World::get_component_checked(
+  self : Self,
+  entity : EntityId,
+) -> C raise EcsError {
+  let id = C::component_id()
+  guard self.is_alive(entity) else { raise EntityMissing(entity) }
+  match self.component_map(entity) {
+    Some(map) =>
+      match map.get(id) {
+        Some(component) =>
+          match C::from_component(component) {
+            Some(value) => value
+            None => raise ComponentVariantMismatch(entity, id)
+          }
+        None => raise ComponentMissing(entity, id)
+      }
+    None => raise ComponentMissing(entity, id)
+  }
+}
+
+///|
 pub fn[C : ComponentValue] World::require_component(
   self : Self,
   entity : EntityId,
@@ -140,6 +180,28 @@ pub fn[C : ComponentValue] World::remove_component(
   _hint? : C? = None,
 ) -> Unit {
   self.remove_component_value(entity, C::component_id())
+}
+
+///|
+pub fn[C : ComponentValue] World::remove_component_checked(
+  self : Self,
+  entity : EntityId,
+  _hint? : C? = None,
+) -> Unit raise EcsError {
+  let id = C::component_id()
+  guard self.is_alive(entity) else { raise EntityMissing(entity) }
+  match self.component_map(entity) {
+    Some(map) =>
+      match map.get(id) {
+        Some(component) =>
+          match C::from_component(component) {
+            Some(_) => map.remove(id)
+            None => raise ComponentVariantMismatch(entity, id)
+          }
+        None => raise ComponentMissing(entity, id)
+      }
+    None => raise ComponentMissing(entity, id)
+  }
 }
 
 ///|
@@ -180,6 +242,21 @@ pub fn[R : ResourceValue] World::get_resource(self : Self) -> R {
 }
 
 ///|
+pub fn[R : ResourceValue] World::get_resource_checked(
+  self : Self,
+) -> R raise EcsError {
+  let id = R::resource_id()
+  match self.resources.get(id) {
+    Some(resource) =>
+      match R::from_resource(resource) {
+        Some(value) => value
+        None => raise ResourceVariantMismatch(id)
+      }
+    None => raise ResourceMissing(id)
+  }
+}
+
+///|
 pub fn[R : ResourceValue] World::try_get_resource(self : Self) -> R? {
   match self.resources.get(R::resource_id()) {
     Some(resource) => R::from_resource(resource)
@@ -193,6 +270,22 @@ pub fn[R : ResourceValue] World::remove_resource(
   _hint? : R? = None,
 ) -> Unit {
   self.resources.remove(R::resource_id())
+}
+
+///|
+pub fn[R : ResourceValue] World::remove_resource_checked(
+  self : Self,
+  _hint? : R? = None,
+) -> Unit raise EcsError {
+  let id = R::resource_id()
+  match self.resources.get(id) {
+    Some(resource) =>
+      match R::from_resource(resource) {
+        Some(_) => self.resources.remove(id)
+        None => raise ResourceVariantMismatch(id)
+      }
+    None => raise ResourceMissing(id)
+  }
 }
 
 ///|

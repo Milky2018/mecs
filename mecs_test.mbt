@@ -720,3 +720,174 @@ test "removed component and resource APIs return absence" {
   inspect(pos is Some(_), content="false")
   inspect(count is Some(_), content="false")
 }
+
+///|
+test "checked entity APIs report entity missing" {
+  let world = @mecs.World()
+  let insert_result = try? world.insert_component_checked(99, Position::{
+    x: 0,
+    y: 0,
+  })
+  let component_result = try? (world.get_component_checked(99) : Position)
+  let remove_result = try? world.remove_component_checked(
+    99,
+    _hint=(None : Position?),
+  )
+  let despawn_result = try? world.despawn_checked(99)
+  inspect(
+    match insert_result {
+      Err(EntityMissing(entity)) => entity == 99
+      _ => false
+    },
+    content="true",
+  )
+  inspect(
+    match component_result {
+      Err(EntityMissing(entity)) => entity == 99
+      _ => false
+    },
+    content="true",
+  )
+  inspect(
+    match remove_result {
+      Err(EntityMissing(entity)) => entity == 99
+      _ => false
+    },
+    content="true",
+  )
+  inspect(
+    match despawn_result {
+      Err(EntityMissing(entity)) => entity == 99
+      _ => false
+    },
+    content="true",
+  )
+}
+
+///|
+test "checked component APIs report missing and variant mismatch" {
+  let world = @mecs.World()
+  let entity = world.spawn_with(
+    (Position::{ x: 1, y: 2 }, Velocity::{ x: 0, y: 0 }),
+  )
+  let missing_result = try? (world.get_component_checked(entity) : Health)
+  inspect(
+    match missing_result {
+      Err(ComponentMissing(id_entity, id)) =>
+        id_entity == entity && id.name() == "Health"
+      _ => false
+    },
+    content="true",
+  )
+  try! world.insert_component(entity, PositionAlias::{ value: 7 })
+  let mismatch_result = try? (world.get_component_checked(entity) : Position)
+  let remove_mismatch_result = try? world.remove_component_checked(
+    entity,
+    _hint=(None : Position?),
+  )
+  inspect(
+    match mismatch_result {
+      Err(ComponentVariantMismatch(id_entity, id)) =>
+        id_entity == entity && id.name() == "Position"
+      _ => false
+    },
+    content="true",
+  )
+  inspect(
+    match remove_mismatch_result {
+      Err(ComponentVariantMismatch(id_entity, id)) =>
+        id_entity == entity && id.name() == "Position"
+      _ => false
+    },
+    content="true",
+  )
+  try! world.remove_component_checked(entity, _hint=(None : PositionAlias?))
+  inspect(has_position_alias(world, entity), content="false")
+}
+
+///|
+test "checked resource APIs report missing and variant mismatch" {
+  let world = @mecs.World()
+  let missing_result = try? (world.get_resource_checked() : StepCount)
+  let remove_missing_result = try? world.remove_resource_checked(
+    _hint=(None : StepCount?),
+  )
+  inspect(
+    match missing_result {
+      Err(ResourceMissing(id)) => id.name() == "StepCount"
+      _ => false
+    },
+    content="true",
+  )
+  inspect(
+    match remove_missing_result {
+      Err(ResourceMissing(id)) => id.name() == "StepCount"
+      _ => false
+    },
+    content="true",
+  )
+  world.set_resource(StepCountAlias::{ value: 3 })
+  let mismatch_result = try? (world.get_resource_checked() : StepCount)
+  let remove_mismatch_result = try? world.remove_resource_checked(
+    _hint=(None : StepCount?),
+  )
+  inspect(
+    match mismatch_result {
+      Err(ResourceVariantMismatch(id)) => id.name() == "StepCount"
+      _ => false
+    },
+    content="true",
+  )
+  inspect(
+    match remove_mismatch_result {
+      Err(ResourceVariantMismatch(id)) => id.name() == "StepCount"
+      _ => false
+    },
+    content="true",
+  )
+  try! world.remove_resource_checked(_hint=(None : StepCountAlias?))
+  inspect(has_step_count_alias(world), content="false")
+}
+
+///|
+test "checked entity ops report failures and mutate live entities" {
+  let world = @mecs.World()
+  let missing_ops = world.entity_ops(99)
+  let missing_insert = try? missing_ops.insert_component_checked(Position::{
+    x: 1,
+    y: 1,
+  })
+  let missing_remove = try? missing_ops.remove_component_checked(
+    _hint=(None : Position?),
+  )
+  let missing_despawn = try? missing_ops.despawn_checked()
+  inspect(
+    match missing_insert {
+      Err(EntityMissing(entity)) => entity == 99
+      _ => false
+    },
+    content="true",
+  )
+  inspect(
+    match missing_remove {
+      Err(EntityMissing(entity)) => entity == 99
+      _ => false
+    },
+    content="true",
+  )
+  inspect(
+    match missing_despawn {
+      Err(EntityMissing(entity)) => entity == 99
+      _ => false
+    },
+    content="true",
+  )
+  let entity = world.spawn()
+  let ops = world.entity_ops(entity)
+  try! ops.insert_component_checked(Position::{ x: 4, y: 5 })
+  inspect(has_position(world, entity), content="true")
+  try! ops.remove_component_checked(_hint=(None : Position?))
+  inspect(has_position(world, entity), content="false")
+  try! ops.despawn_checked()
+  inspect(world.is_alive(entity), content="false")
+}

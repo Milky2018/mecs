@@ -8,6 +8,14 @@ import {
 // Values
 
 // Errors
+pub(all) suberror EcsError {
+  EntityMissing(UInt)
+  ComponentMissing(UInt, ComponentId)
+  ComponentVariantMismatch(UInt, ComponentId)
+  ResourceMissing(ResourceId)
+  ResourceVariantMismatch(ResourceId)
+} derive(Eq, @debug.Debug)
+
 pub suberror NotSpawned {
   NotSpawned(UInt)
 }
@@ -39,8 +47,11 @@ pub fn ComponentId::name(Self) -> String
 
 type EntityOps
 pub fn EntityOps::despawn(Self) -> Bool
+pub fn EntityOps::despawn_checked(Self) -> Unit raise EcsError
 pub fn[C : ComponentValue] EntityOps::insert_component(Self, C) -> Unit raise NotSpawned
-pub fn[C : ComponentValue] EntityOps::remove_component(Self) -> Unit
+pub fn[C : ComponentValue] EntityOps::insert_component_checked(Self, C) -> Unit raise EcsError
+pub fn[C : ComponentValue] EntityOps::remove_component(Self, _hint? : C?) -> Unit
+pub fn[C : ComponentValue] EntityOps::remove_component_checked(Self, _hint? : C?) -> Unit raise EcsError
 
 pub extenum Resource {
 }
@@ -86,15 +97,19 @@ pub fn World::add_system_to_stage(Self, Stage, System, before? : Array[SystemLab
 pub fn World::apply_commands(Self, Commands) -> Unit raise NotSpawned
 pub fn World::commands(Self) -> Commands
 pub fn World::despawn(Self, UInt) -> Bool
+pub fn World::despawn_checked(Self, UInt) -> Unit raise EcsError
 pub fn[A : ComponentValue, B : ComponentValue] World::each2(Self, (A, B) -> Unit) -> Unit raise NotSpawned
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::each3(Self, (A, B, C) -> Unit) -> Unit raise NotSpawned
 pub fn World::entity_ops(Self, UInt) -> EntityOps
 pub fn World::fixed_step(Self) -> Unit raise NotSpawned
 pub fn[C : ComponentValue] World::get_component(Self, UInt) -> C?
+pub fn[C : ComponentValue] World::get_component_checked(Self, UInt) -> C raise EcsError
 pub fn[R : ResourceValue] World::get_resource(Self) -> R
+pub fn[R : ResourceValue] World::get_resource_checked(Self) -> R raise EcsError
 pub fn[C : ComponentValue] World::has_component(Self, UInt, _hint? : C?) -> Bool
 pub fn[R : ResourceValue] World::has_resource(Self, _hint? : R?) -> Bool
 pub fn[C : ComponentValue] World::insert_component(Self, UInt, C) -> Unit raise NotSpawned
+pub fn[C : ComponentValue] World::insert_component_checked(Self, UInt, C) -> Unit raise EcsError
 pub fn World::is_alive(Self, UInt) -> Bool
 pub fn[Q : Query] World::query(Self) -> Iter[Q]
 pub fn[C : ComponentValue] World::query1(Self) -> Iter[C]
@@ -108,7 +123,9 @@ pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : Component
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue, E : ComponentValue] World::query5(Self) -> Iter[(A, B, C, D, E)]
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue, E : ComponentValue] World::query5_entities(Self) -> Iter2[UInt, (A, B, C, D, E)]
 pub fn[C : ComponentValue] World::remove_component(Self, UInt, _hint? : C?) -> Unit
+pub fn[C : ComponentValue] World::remove_component_checked(Self, UInt, _hint? : C?) -> Unit raise EcsError
 pub fn[R : ResourceValue] World::remove_resource(Self, _hint? : R?) -> Unit
+pub fn[R : ResourceValue] World::remove_resource_checked(Self, _hint? : R?) -> Unit raise EcsError
 pub fn[C : ComponentValue] World::require_component(Self, UInt) -> C
 pub fn World::run_stage(Self, Stage) -> Unit raise NotSpawned
 pub fn[R : ResourceValue] World::set_resource(Self, R) -> Unit
