@@ -366,13 +366,15 @@ test "commands remove and despawn duplicate operations deterministically" {
 ///|
 test "commands targeting dead entities report not spawned on insert" {
   let world = @mecs.World()
+  let dead = world.spawn()
+  ignore(world.despawn(dead))
   let commands = world.commands()
-  commands.despawn(99)
-  commands.insert_component(99, Position::{ x: 1, y: 1 })
+  commands.despawn(dead)
+  commands.insert_component(dead, Position::{ x: 1, y: 1 })
   let result = try? world.apply_commands(commands)
   inspect(
     match result {
-      Err(NotSpawned(entity)) => entity == 99
+      Err(NotSpawned(entity)) => entity == dead
       _ => false
     },
     content="true",
@@ -711,11 +713,13 @@ test "entity ops can dynamically add components" {
 ///|
 test "entity ops insert reports dead entity failure" {
   let world = @mecs.World()
-  let ops = world.entity_ops(99)
+  let dead = world.spawn()
+  ignore(world.despawn(dead))
+  let ops = world.entity_ops(dead)
   let result = try? ops.insert_component(Position::{ x: 0, y: 0 })
   inspect(
     match result {
-      Err(NotSpawned(entity)) => entity == 99
+      Err(NotSpawned(entity)) => entity == dead
       _ => false
     },
     content="true",
@@ -781,18 +785,20 @@ test "resource id collision overwrites one storage slot" {
 ///|
 test "missing entity reads are safe and insert reports not spawned" {
   let world = @mecs.World()
-  inspect(world.is_alive(99), content="false")
-  let result = try? world.insert_component(99, Position::{ x: 1, y: 1 })
+  let dead = world.spawn()
+  ignore(world.despawn(dead))
+  inspect(world.is_alive(dead), content="false")
+  let result = try? world.insert_component(dead, Position::{ x: 1, y: 1 })
   inspect(
     match result {
-      Err(NotSpawned(entity)) => entity == 99
+      Err(NotSpawned(entity)) => entity == dead
       _ => false
     },
     content="true",
   )
-  let pos : Position? = world.get_component(99)
+  let pos : Position? = world.get_component(dead)
   inspect(pos is Some(_), content="false")
-  inspect(has_position(world, 99), content="false")
+  inspect(has_position(world, dead), content="false")
   let counter : StepCount? = world.try_get_resource()
   inspect(counter is Some(_), content="false")
   inspect(has_step_count(world), content="false")
@@ -820,40 +826,42 @@ test "removed component and resource APIs return absence" {
 ///|
 test "checked entity APIs report entity missing" {
   let world = @mecs.World()
-  let insert_result = try? world.insert_component_checked(99, Position::{
+  let dead = world.spawn()
+  ignore(world.despawn(dead))
+  let insert_result = try? world.insert_component_checked(dead, Position::{
     x: 0,
     y: 0,
   })
-  let component_result = try? (world.get_component_checked(99) : Position)
+  let component_result = try? (world.get_component_checked(dead) : Position)
   let remove_result = try? world.remove_component_checked(
-    99,
+    dead,
     _hint=(None : Position?),
   )
-  let despawn_result = try? world.despawn_checked(99)
+  let despawn_result = try? world.despawn_checked(dead)
   inspect(
     match insert_result {
-      Err(EntityMissing(entity)) => entity == 99
+      Err(EntityMissing(entity)) => entity == dead
       _ => false
     },
     content="true",
   )
   inspect(
     match component_result {
-      Err(EntityMissing(entity)) => entity == 99
+      Err(EntityMissing(entity)) => entity == dead
       _ => false
     },
     content="true",
   )
   inspect(
     match remove_result {
-      Err(EntityMissing(entity)) => entity == 99
+      Err(EntityMissing(entity)) => entity == dead
       _ => false
     },
     content="true",
   )
   inspect(
     match despawn_result {
-      Err(EntityMissing(entity)) => entity == 99
+      Err(EntityMissing(entity)) => entity == dead
       _ => false
     },
     content="true",
@@ -948,7 +956,9 @@ test "checked resource APIs report missing and variant mismatch" {
 ///|
 test "checked entity ops report failures and mutate live entities" {
   let world = @mecs.World()
-  let missing_ops = world.entity_ops(99)
+  let dead = world.spawn()
+  ignore(world.despawn(dead))
+  let missing_ops = world.entity_ops(dead)
   let missing_insert = try? missing_ops.insert_component_checked(Position::{
     x: 1,
     y: 1,
@@ -959,21 +969,21 @@ test "checked entity ops report failures and mutate live entities" {
   let missing_despawn = try? missing_ops.despawn_checked()
   inspect(
     match missing_insert {
-      Err(EntityMissing(entity)) => entity == 99
+      Err(EntityMissing(entity)) => entity == dead
       _ => false
     },
     content="true",
   )
   inspect(
     match missing_remove {
-      Err(EntityMissing(entity)) => entity == 99
+      Err(EntityMissing(entity)) => entity == dead
       _ => false
     },
     content="true",
   )
   inspect(
     match missing_despawn {
-      Err(EntityMissing(entity)) => entity == 99
+      Err(EntityMissing(entity)) => entity == dead
       _ => false
     },
     content="true",

@@ -12,15 +12,15 @@ pub fn resource_id(String) -> ResourceId
 
 // Errors
 pub(all) suberror EcsError {
-  EntityMissing(UInt)
-  ComponentMissing(UInt, ComponentId)
-  ComponentVariantMismatch(UInt, ComponentId)
+  EntityMissing(EntityId)
+  ComponentMissing(EntityId, ComponentId)
+  ComponentVariantMismatch(EntityId, ComponentId)
   ResourceMissing(ResourceId)
   ResourceVariantMismatch(ResourceId)
 } derive(Eq, @debug.Debug)
 
 pub suberror NotSpawned {
-  NotSpawned(UInt)
+  NotSpawned(EntityId)
 }
 
 // Types and methods
@@ -32,12 +32,12 @@ pub fn CommandSystem::CommandSystem((World, Commands) -> Unit, name? : String) -
 pub fn CommandSystem::label(Self) -> SystemLabel
 
 type Commands
-pub fn Commands::despawn(Self, UInt) -> Unit
-pub fn[C : ComponentValue] Commands::insert_component(Self, UInt, C) -> Unit
-pub fn[C : ComponentValue] Commands::remove_component(Self, UInt, _hint? : C?) -> Unit
+pub fn Commands::despawn(Self, EntityId) -> Unit
+pub fn[C : ComponentValue] Commands::insert_component(Self, EntityId, C) -> Unit
+pub fn[C : ComponentValue] Commands::remove_component(Self, EntityId, _hint? : C?) -> Unit
 pub fn[R : ResourceValue] Commands::remove_resource(Self, _hint? : R?) -> Unit
 pub fn[R : ResourceValue] Commands::set_resource(Self, R) -> Unit
-pub fn Commands::spawn(Self) -> UInt
+pub fn Commands::spawn(Self) -> EntityId
 
 pub extenum Component {
 }
@@ -47,6 +47,9 @@ pub struct ComponentId {
 } derive(Eq, Hash, @debug.Debug)
 pub fn ComponentId::ComponentId(String) -> Self
 pub fn ComponentId::name(Self) -> String
+
+type EntityId derive(Eq, Hash, @debug.Debug)
+pub fn EntityId::value(Self) -> UInt
 
 type EntityOps
 pub fn EntityOps::despawn(Self) -> Bool
@@ -99,56 +102,55 @@ pub fn World::add_system_fn_to_stage(Self, Stage, (Self) -> Unit, name? : String
 pub fn World::add_system_to_stage(Self, Stage, System, before? : Array[SystemLabel], after? : Array[SystemLabel], run_if? : (Self) -> Bool) -> Unit
 pub fn World::apply_commands(Self, Commands) -> Unit raise NotSpawned
 pub fn World::commands(Self) -> Commands
-pub fn World::despawn(Self, UInt) -> Bool
-pub fn World::despawn_checked(Self, UInt) -> Unit raise EcsError
+pub fn World::despawn(Self, EntityId) -> Bool
+pub fn World::despawn_checked(Self, EntityId) -> Unit raise EcsError
 pub fn[A : ComponentValue, B : ComponentValue] World::each2(Self, (A, B) -> Unit) -> Unit raise NotSpawned
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::each3(Self, (A, B, C) -> Unit) -> Unit raise NotSpawned
-pub fn World::entity_ops(Self, UInt) -> EntityOps
+pub fn World::entity_ops(Self, EntityId) -> EntityOps
 pub fn World::fixed_step(Self) -> Unit raise NotSpawned
 pub fn[C : ComponentValue] World::for_each1(Self, (C) -> Unit) -> Unit
 pub fn[A : ComponentValue, B : ComponentValue] World::for_each2(Self, (A, B) -> Unit) -> Unit
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::for_each3(Self, (A, B, C) -> Unit) -> Unit
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue] World::for_each4(Self, (A, B, C, D) -> Unit) -> Unit
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue, E : ComponentValue] World::for_each5(Self, (A, B, C, D, E) -> Unit) -> Unit
-pub fn[C : ComponentValue] World::get_component(Self, UInt) -> C?
-pub fn[C : ComponentValue] World::get_component_checked(Self, UInt) -> C raise EcsError
+pub fn[C : ComponentValue] World::get_component(Self, EntityId) -> C?
+pub fn[C : ComponentValue] World::get_component_checked(Self, EntityId) -> C raise EcsError
 pub fn[R : ResourceValue] World::get_resource(Self) -> R
 pub fn[R : ResourceValue] World::get_resource_checked(Self) -> R raise EcsError
-pub fn[C : ComponentValue] World::has_component(Self, UInt, _hint? : C?) -> Bool
+pub fn[C : ComponentValue] World::has_component(Self, EntityId, _hint? : C?) -> Bool
 pub fn[R : ResourceValue] World::has_resource(Self, _hint? : R?) -> Bool
-pub fn[C : ComponentValue] World::insert_component(Self, UInt, C) -> Unit raise NotSpawned
-pub fn[C : ComponentValue] World::insert_component_checked(Self, UInt, C) -> Unit raise EcsError
-pub fn World::is_alive(Self, UInt) -> Bool
+pub fn[C : ComponentValue] World::insert_component(Self, EntityId, C) -> Unit raise NotSpawned
+pub fn[C : ComponentValue] World::insert_component_checked(Self, EntityId, C) -> Unit raise EcsError
+pub fn World::is_alive(Self, EntityId) -> Bool
 pub fn[Q : Query] World::query(Self) -> Iter[Q]
 pub fn[C : ComponentValue] World::query1(Self) -> Iter[C]
-pub fn[C : ComponentValue] World::query1_entities(Self) -> Iter2[UInt, C]
+pub fn[C : ComponentValue] World::query1_entities(Self) -> Iter2[EntityId, C]
 pub fn[A : ComponentValue, B : ComponentValue] World::query2(Self) -> Iter[(A, B)]
-pub fn[A : ComponentValue, B : ComponentValue] World::query2_entities(Self) -> Iter2[UInt, (A, B)]
+pub fn[A : ComponentValue, B : ComponentValue] World::query2_entities(Self) -> Iter2[EntityId, (A, B)]
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3(Self) -> Iter[(A, B, C)]
-pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3_entities(Self) -> Iter2[UInt, (A, B, C)]
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3_entities(Self) -> Iter2[EntityId, (A, B, C)]
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue] World::query4(Self) -> Iter[(A, B, C, D)]
-pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue] World::query4_entities(Self) -> Iter2[UInt, (A, B, C, D)]
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue] World::query4_entities(Self) -> Iter2[EntityId, (A, B, C, D)]
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue, E : ComponentValue] World::query5(Self) -> Iter[(A, B, C, D, E)]
-pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue, E : ComponentValue] World::query5_entities(Self) -> Iter2[UInt, (A, B, C, D, E)]
-pub fn[C : ComponentValue] World::remove_component(Self, UInt, _hint? : C?) -> Unit
-pub fn[C : ComponentValue] World::remove_component_checked(Self, UInt, _hint? : C?) -> Unit raise EcsError
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue, E : ComponentValue] World::query5_entities(Self) -> Iter2[EntityId, (A, B, C, D, E)]
+pub fn[C : ComponentValue] World::remove_component(Self, EntityId, _hint? : C?) -> Unit
+pub fn[C : ComponentValue] World::remove_component_checked(Self, EntityId, _hint? : C?) -> Unit raise EcsError
 pub fn[R : ResourceValue] World::remove_resource(Self, _hint? : R?) -> Unit
 pub fn[R : ResourceValue] World::remove_resource_checked(Self, _hint? : R?) -> Unit raise EcsError
-pub fn[C : ComponentValue] World::require_component(Self, UInt) -> C
+pub fn[C : ComponentValue] World::require_component(Self, EntityId) -> C
 pub fn World::run_stage(Self, Stage) -> Unit raise NotSpawned
 pub fn[R : ResourceValue] World::set_resource(Self, R) -> Unit
-pub fn World::spawn(Self) -> UInt
-pub fn[B : Bundle] World::spawn_with(Self, B) -> UInt
+pub fn World::spawn(Self) -> EntityId
+pub fn[B : Bundle] World::spawn_with(Self, B) -> EntityId
 pub fn World::step(Self) -> Unit raise NotSpawned
 pub fn World::system_order(Self, stage? : Stage) -> Array[SystemLabel]
 pub fn[R : ResourceValue] World::try_get_resource(Self) -> R?
 
 // Type aliases
-pub type EntityId = UInt
 
 // Traits
 pub(open) trait Bundle {
-  insert_into(Self, World, UInt) -> Unit
+  insert_into(Self, World, EntityId) -> Unit
 }
 pub impl[A : ComponentValue, B : ComponentValue] Bundle for (A, B)
 pub impl[A : ComponentValue, B : ComponentValue, C : ComponentValue] Bundle for (A, B, C)

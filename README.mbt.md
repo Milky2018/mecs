@@ -153,6 +153,16 @@ resource templates, and [docs/migration.md](/docs/migration.md) for migration
 notes from the earlier experimental designs. Performance benchmarks and storage
 tradeoffs are tracked in [docs/performance.md](/docs/performance.md).
 
+## Entity Handles
+
+`EntityId` is an opaque entity handle, not an integer alias. Users receive
+entity handles from `World::spawn`, `World::spawn_with`, `Commands::spawn`, or
+entity-returning query APIs. The handle can be copied, compared, hashed, and
+used with world APIs, but arbitrary ids should not be constructed by user code.
+
+Use `EntityId::value` only when a stable numeric value is needed for logging,
+diagnostics, serialization keys, or tests.
+
 ## Insert Failures
 
 `World::insert_component` and `EntityOps::insert_component` return `Unit`. If
@@ -195,7 +205,7 @@ queries. They yield component values from the world and do not write changes
 back by themselves. Entity-returning query variants consistently return
 `Iter2[EntityId, (...)]`, with `query1_entities` returning `Iter2[EntityId, C]`.
 
-`for_each2` and `for_each3` are streaming query helpers. They avoid allocating
+`for_each1` through `for_each5` are streaming query helpers. They avoid allocating
 an intermediate result array and do not snapshot rows or perform explicit
 writeback. If a component value contains mutable state, mutating it inside the
 callback can still affect the stored component immediately. Use these helpers

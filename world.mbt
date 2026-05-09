@@ -1,6 +1,6 @@
 ///|
 struct World {
-  mut entity_id_gen : EntityId
+  mut entity_id_gen : UInt
   entities : @set.Set[EntityId]
   component_ids : Map[EntityId, Array[ComponentId]]
   component_stores : Map[ComponentId, @hashmap.HashMap[EntityId, Component]]
@@ -31,15 +31,15 @@ pub fn World::spawn(self : Self) -> EntityId {
 
 ///|
 fn World::reserve_entity_id(self : Self) -> EntityId {
-  let entity = self.entity_id_gen
+  let entity = EntityId::EntityId(self.entity_id_gen)
   self.entity_id_gen += 1
   entity
 }
 
 ///|
 fn World::spawn_reserved(self : Self, entity : EntityId) -> Unit {
-  if entity >= self.entity_id_gen {
-    self.entity_id_gen = entity + 1
+  if entity.value() >= self.entity_id_gen {
+    self.entity_id_gen = entity.value() + 1
   }
   guard !self.is_alive(entity) else { return }
   self.entities.add(entity)
@@ -232,7 +232,7 @@ pub fn[C : ComponentValue] World::require_component(
 ) -> C {
   match self.get_component(entity) {
     Some(component) => component
-    None => abort("component is missing on entity \{entity}")
+    None => abort("component is missing on entity \{entity.value()}")
   }
 }
 

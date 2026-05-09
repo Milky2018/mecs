@@ -207,7 +207,8 @@ Costs and risks:
 - The implementation is harder to audit than the original map-of-maps design.
 
 Decision: keep the hashmap column backend for now because it improves real query
-performance without changing the public API. Do not adopt `SlotMap` entity keys
-until we are ready to revisit the public `EntityId = UInt` type. Do not adopt
+performance. `EntityId` is now an opaque handle instead of a `UInt` alias, so a
+future generational or slotmap-backed entity allocator can be evaluated without
+letting users pass arbitrary integers as entities. Do not adopt
 `SparseSecondaryMap` as the default unless a future memory benchmark justifies
 the slower runtime profile.

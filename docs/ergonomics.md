@@ -94,6 +94,13 @@ Use `World::spawn_with` for initial component bundles:
 let entity = world.spawn_with((Position::{ x: 0, y: 0 }, Velocity::{ x: 1, y: 0 }))
 ```
 
+`EntityId` is an opaque handle returned by the world. Keep it as an entity
+handle in your data model instead of converting from arbitrary integers:
+
+```moonbit
+let entity : @mecs.EntityId = world.spawn()
+```
+
 Use `World::queryN_entities` when the system needs entity ids:
 
 ```moonbit

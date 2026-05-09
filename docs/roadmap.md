@@ -7,12 +7,12 @@ typed conversion traits for their own component and resource values.
 
 ## Principles
 
-- [ ] Preserve type safety without compiler primitives, type-erased `Any`, or C
+- [x] Preserve type safety without compiler primitives, type-erased `Any`, or C
       FFI.
-- [ ] Keep the core API portable across MoonBit stable targets.
-- [ ] Prefer explicit semantics over hidden mutation or scheduler behavior.
-- [ ] Add abstractions only when they remove real user burden or clarify safety.
-- [ ] Keep every public API change reflected in `pkg.generated.mbti` and tests.
+- [x] Keep the core API portable across MoonBit stable targets.
+- [x] Prefer explicit semantics over hidden mutation or scheduler behavior.
+- [x] Add abstractions only when they remove real user burden or clarify safety.
+- [x] Keep every public API change reflected in `pkg.generated.mbti` and tests.
 
 ## Phase 1: API Hardening
 
@@ -175,9 +175,10 @@ Optimization backlog:
       `SlotMap + SparseSecondaryMap`.
 - [x] Implement per-component storage behind the existing public API:
       `Map[ComponentId, @hashmap.HashMap[EntityId, Component]]`.
+- [x] Replace `EntityId = UInt` with an opaque entity handle so users cannot
+      pass arbitrary integers as entities.
 - [ ] Prototype `SlotMap`-allocated entity keys plus per-component
-      `SecondaryMap` columns after deciding whether `EntityId = UInt` can
-      change.
+      `SecondaryMap` columns now that the public entity handle is opaque.
 - [x] Keep `@hashmap.HashMap` component columns as the control implementation
       and adopt them for the current backend.
 - [x] Make queries iterate the smallest matching component table instead of
@@ -219,20 +220,20 @@ Optimization backlog:
 
 Goal: prepare the library for real users and versioned releases.
 
-- [ ] Decide semantic versioning policy.
-- [ ] Add a changelog.
-- [ ] Expand package docs and examples.
-- [ ] Add CI commands matching local validation: `moon info`, `moon fmt`,
+- [x] Decide semantic versioning policy.
+- [x] Add a changelog.
+- [x] Expand package docs and examples.
+- [x] Add CI commands matching local validation: `moon info`, `moon fmt`,
       `moon check --warn-list +73`, and `moon test --target all`.
-- [ ] Document supported targets.
-- [ ] Audit public names before the first stable release.
+- [x] Document supported targets.
+- [x] Audit public names before the first stable release.
 
 Acceptance criteria:
 
-- [ ] The repository has a documented release process.
-- [ ] CI verifies formatting, generated interfaces, warnings, and all-target
+- [x] The repository has a documented release process.
+- [x] CI verifies formatting, generated interfaces, warnings, and all-target
       tests.
-- [ ] The public API is intentionally stable for the chosen release version.
+- [x] The public API is intentionally stable for the chosen release version.
 
 ## Current Priority
 
