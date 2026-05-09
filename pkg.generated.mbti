@@ -59,6 +59,14 @@ pub fn[C : ComponentValue] EntityOps::insert_component_checked(Self, C) -> Unit 
 pub fn[C : ComponentValue] EntityOps::remove_component(Self, _hint? : C?) -> Unit
 pub fn[C : ComponentValue] EntityOps::remove_component_checked(Self, _hint? : C?) -> Unit raise EcsError
 
+pub struct QueryFilter {
+  // private fields
+}
+pub fn QueryFilter::QueryFilter() -> Self
+pub fn QueryFilter::is_empty(Self) -> Bool
+pub fn[C : ComponentValue] QueryFilter::with_component(Self, _hint? : C?) -> Self
+pub fn[C : ComponentValue] QueryFilter::without_component(Self, _hint? : C?) -> Self
+
 pub extenum Resource {
 }
 
@@ -125,14 +133,24 @@ pub fn World::is_alive(Self, EntityId) -> Bool
 pub fn[Q : Query] World::query(Self) -> Iter[Q]
 pub fn[C : ComponentValue] World::query1(Self) -> Iter[C]
 pub fn[C : ComponentValue] World::query1_entities(Self) -> Iter2[EntityId, C]
+pub fn[C : ComponentValue] World::query1_entities_filtered(Self, QueryFilter) -> Iter2[EntityId, C]
+pub fn[C : ComponentValue] World::query1_filtered(Self, QueryFilter) -> Iter[C]
 pub fn[A : ComponentValue, B : ComponentValue] World::query2(Self) -> Iter[(A, B)]
 pub fn[A : ComponentValue, B : ComponentValue] World::query2_entities(Self) -> Iter2[EntityId, (A, B)]
+pub fn[A : ComponentValue, B : ComponentValue] World::query2_entities_filtered(Self, QueryFilter) -> Iter2[EntityId, (A, B)]
+pub fn[A : ComponentValue, B : ComponentValue] World::query2_filtered(Self, QueryFilter) -> Iter[(A, B)]
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3(Self) -> Iter[(A, B, C)]
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3_entities(Self) -> Iter2[EntityId, (A, B, C)]
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3_entities_filtered(Self, QueryFilter) -> Iter2[EntityId, (A, B, C)]
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3_filtered(Self, QueryFilter) -> Iter[(A, B, C)]
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue] World::query4(Self) -> Iter[(A, B, C, D)]
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue] World::query4_entities(Self) -> Iter2[EntityId, (A, B, C, D)]
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue] World::query4_entities_filtered(Self, QueryFilter) -> Iter2[EntityId, (A, B, C, D)]
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue] World::query4_filtered(Self, QueryFilter) -> Iter[(A, B, C, D)]
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue, E : ComponentValue] World::query5(Self) -> Iter[(A, B, C, D, E)]
 pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue, E : ComponentValue] World::query5_entities(Self) -> Iter2[EntityId, (A, B, C, D, E)]
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue, E : ComponentValue] World::query5_entities_filtered(Self, QueryFilter) -> Iter2[EntityId, (A, B, C, D, E)]
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue, E : ComponentValue] World::query5_filtered(Self, QueryFilter) -> Iter[(A, B, C, D, E)]
 pub fn[C : ComponentValue] World::remove_component(Self, EntityId, _hint? : C?) -> Unit
 pub fn[C : ComponentValue] World::remove_component_checked(Self, EntityId, _hint? : C?) -> Unit raise EcsError
 pub fn[R : ResourceValue] World::remove_resource(Self, _hint? : R?) -> Unit

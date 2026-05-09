@@ -35,6 +35,7 @@ The baseline ECS benchmark suite lives in `mecs_bench_test.mbt` and covers:
 - `for_each5` over 1000 entities
 - sparse `query3` over 1000 entities with one matching component on one in four
   entities
+- filtered `query2` over the same sparse world, with and without `Health`
 - setting, getting, and removing one resource 1000 times
 
 The storage comparison suite lives in `storage_compare_bench_test.mbt` and
@@ -91,6 +92,26 @@ Insert and remove are slower because writes maintain both the entity
 component-id list and the component column. The remove benchmark also includes
 world construction, so it captures part of the insertion cost.
 
+Filtered query results recorded on 2026-05-09 with:
+
+```sh
+moon bench --package Milky2018/mecs --file mecs_bench_test.mbt --target native --release
+```
+
+The benchmark world has 1000 entities with `Position` and `Velocity` on every
+entity and `Health` on one in four entities.
+
+| Query | Native Time |
+|---|---:|
+| `query2_filtered` with `Health` | 16.89 us |
+| `query2_filtered` without `Health` | 99.30 us |
+
+The `with Health` case can choose the sparse `Health` component store as the
+scan driver and then probe `Position` and `Velocity`. The `without Health` case
+still scans the base `Position`/`Velocity` query rows and checks exclusion for
+each candidate. Dense component masks should make this exclusion check much
+cheaper once they replace the per-entity component-id list metadata.
+
 ## Storage Comparison
 
 Recorded on 2026-05-08 with:
@@ -111,6 +132,8 @@ Dense storage with three components on every entity:
 | Nested builtin maps | 111.06 us | 21.30 us | 118.02 us | 128.56 us |
 | Component builtin maps | 110.93 us | 20.83 us | 120.63 us | 151.67 us |
 | Component hashmaps | 62.76 us | 22.43 us | 89.95 us | 109.15 us |
+| ComponentId hashmaps + entity id lists | 196.22 us | 21.63 us | N/A | 319.98 us |
+| Dense component indexes + masks | 69.67 us | 22.01 us | N/A | 112.67 us |
 | SlotMap + SecondaryMap | 52.29 us | 19.66 us | 55.71 us | 74.66 us |
 | SlotMap + SparseSecondaryMap | 186.65 us | 42.14 us | 198.35 us | 252.48 us |
 
@@ -121,8 +144,17 @@ Sparse query with `Health` present on one in four entities:
 | Nested builtin maps | 21.62 us | N/A |
 | Component builtin maps | 19.23 us | 4.73 us |
 | Component hashmaps | 18.54 us | 4.26 us |
+| ComponentId hashmaps + entity id lists | 18.59 us | 4.56 us |
+| Dense component indexes + masks | 19.00 us | 4.45 us |
 | SlotMap + SecondaryMap | 21.80 us | 5.08 us |
 | SlotMap + SparseSecondaryMap | 44.37 us | 9.80 us |
+
+Component membership checks with three required components on every entity:
+
+| Entity Metadata | Has Query3 1000 |
+|---|---:|
+| ComponentId list scan | 20.42 us |
+| Dense component-index mask | 1.88 us |
 
 Entity churn with 1000 live entities and 1000 remove/insert rounds:
 
@@ -149,6 +181,11 @@ Storage conclusions:
 - Choosing the smallest component table as the query driver matters more than
   the container choice for sparse queries. In this run, sparse-drive query3 is
   about four to five times faster than dense-drive query3.
+- Dense component indexes do not materially improve `query3` once component
+  stores are already cached outside the per-entity loop. Their value is entity
+  metadata: mask membership checks are about ten times faster than scanning
+  `Array[ComponentId]`, and dense-index despawn bookkeeping is much faster than
+  removing through per-entity component-id lists.
 
 ## Current Storage
 

@@ -227,9 +227,33 @@ typed reads from the same entity component slot. For example,
 `query2_entities[Position, Position]` yields two `Position` values read from the
 same stored `Position` component.
 
-Optional `with`, `without`, and entity-only query filters are not part of the
-current query API. Keep those filters explicit in system code until the filter
-model is added.
+`QueryFilter` adds typed `with` and `without` component constraints to
+`query1_filtered` through `query5_filtered` and their
+`queryN_entities_filtered` variants:
+
+```moonbit nocheck
+///|
+let moving = @mecs.QueryFilter().with_component(_hint=(None : ReadmeVelocity?))
+
+///|
+let moving_positions : Array[ReadmePosition] = world
+  .query1_filtered(moving)
+  .to_array()
+
+///|
+let stationary = @mecs.QueryFilter().without_component(
+  _hint=(None : ReadmeVelocity?),
+)
+
+///|
+let stationary_positions : Array[ReadmePosition] = world
+  .query1_filtered(stationary)
+  .to_array()
+```
+
+The `_hint` argument tells MoonBit which component type the generic filter
+method should use. The filter checks the typed component conversion, so an id
+collision with the wrong extensible-enum variant does not count as present.
 
 Prefer command buffers for structural changes requested from systems. If direct
 world mutation changes the same queried component slots inside an `eachN`

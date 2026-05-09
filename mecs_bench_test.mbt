@@ -471,6 +471,12 @@ test "bench ecs: query" (b : @bench.T) {
 ///|
 test "bench ecs: sparse query" (b : @bench.T) {
   let world = build_sparse_bench_world(bench_size, 4)
+  let with_health = @mecs.QueryFilter().with_component(
+    _hint=(None : BenchHealth?),
+  )
+  let without_health = @mecs.QueryFilter().without_component(
+    _hint=(None : BenchHealth?),
+  )
   b.bench(name="sparse query3 over 1000 entities", count=100U, fn() {
     let rows : Array[(BenchPosition, BenchVelocity, BenchHealth)] = world
       .query3()
@@ -488,6 +494,22 @@ test "bench ecs: sparse query" (b : @bench.T) {
     })
     b.keep(total.val)
   })
+  b.bench(name="filtered query2 with health over 1000 entities", count=100U, fn() {
+    let rows : Array[(BenchPosition, BenchVelocity)] = world
+      .query2_filtered(with_health)
+      .to_array()
+    b.keep(checksum_bench_pair_rows(rows))
+  })
+  b.bench(
+    name="filtered query2 without health over 1000 entities",
+    count=100U,
+    fn() {
+      let rows : Array[(BenchPosition, BenchVelocity)] = world
+        .query2_filtered(without_health)
+        .to_array()
+      b.keep(checksum_bench_pair_rows(rows))
+    },
+  )
 }
 
 ///|

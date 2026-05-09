@@ -109,6 +109,23 @@ let rows : Array[(@mecs.EntityId, (Velocity, Position))] = world
   .to_array()
 ```
 
+Use `QueryFilter` when a query needs extra component-presence constraints
+without reading those components as result values:
+
+```moonbit
+let moving = @mecs.QueryFilter().with_component(_hint=(None : Velocity?))
+let rows : Array[Position] = world.query1_filtered(moving).to_array()
+
+let unarmored = @mecs.QueryFilter().without_component(_hint=(None : Armor?))
+let targets : Array[(@mecs.EntityId, (Position, Velocity))] = world
+  .query2_entities_filtered(unarmored)
+  .to_array()
+```
+
+The `_hint` argument is only for generic type selection; the filter still uses
+the component's `ComponentValue` implementation and validates the stored
+extensible-enum variant.
+
 Use checked APIs when absence is expected:
 
 ```moonbit

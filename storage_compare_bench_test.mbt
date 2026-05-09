@@ -42,8 +42,104 @@ priv struct SparseSecondaryColumns {
 }
 
 ///|
+priv struct ComponentIdHashColumns {
+  stores : Map[@mecs.ComponentId, @hashmap.HashMap[Int, Int]]
+  component_ids : Array[Array[@mecs.ComponentId]]
+}
+
+///|
+priv struct DenseComponentIndex {
+  value : Int
+}
+
+///|
+priv struct DenseComponentRegistry {
+  indexes : Map[@mecs.ComponentId, DenseComponentIndex]
+}
+
+///|
+priv struct DenseIndexedHashColumns {
+  registry : DenseComponentRegistry
+  stores : Array[@hashmap.HashMap[Int, Int]]
+  masks : Array[Int]
+}
+
+///|
 fn compare_value(entity : Int, component : Int) -> Int {
   entity * 31 + component
+}
+
+///|
+fn compare_position_id() -> @mecs.ComponentId {
+  @mecs.component_id("Position")
+}
+
+///|
+fn compare_velocity_id() -> @mecs.ComponentId {
+  @mecs.component_id("Velocity")
+}
+
+///|
+fn compare_health_id() -> @mecs.ComponentId {
+  @mecs.component_id("Health")
+}
+
+///|
+fn DenseComponentIndex::DenseComponentIndex(value : Int) -> Self {
+  { value, }
+}
+
+///|
+fn DenseComponentIndex::value(self : Self) -> Int {
+  self.value
+}
+
+///|
+fn DenseComponentRegistry::index(
+  self : Self,
+  id : @mecs.ComponentId,
+) -> DenseComponentIndex {
+  match self.indexes.get(id) {
+    Some(index) => index
+    None => abort("component id is not registered: \{id.name()}")
+  }
+}
+
+///|
+fn build_dense_component_registry() -> DenseComponentRegistry {
+  let indexes : Map[@mecs.ComponentId, DenseComponentIndex] = Map(
+    [],
+    capacity=3,
+  )
+  indexes[compare_position_id()] = DenseComponentIndex(0)
+  indexes[compare_velocity_id()] = DenseComponentIndex(1)
+  indexes[compare_health_id()] = DenseComponentIndex(2)
+  { indexes, }
+}
+
+///|
+fn compare_component_bit(index : DenseComponentIndex) -> Int {
+  match index.value() {
+    0 => 1
+    1 => 2
+    2 => 4
+    _ => abort("component index is outside the benchmark mask range")
+  }
+}
+
+///|
+fn compare_mask_has(mask : Int, index : DenseComponentIndex) -> Bool {
+  let bit = compare_component_bit(index)
+  mask / bit % 2 == 1
+}
+
+///|
+fn compare_mask_add(mask : Int, index : DenseComponentIndex) -> Int {
+  if compare_mask_has(mask, index) {
+    mask
+  } else {
+    mask + compare_component_bit(index)
+  }
 }
 
 ///|
@@ -149,6 +245,96 @@ fn build_sparse_secondary_columns(
     }
   }
   { entities, keys, position, velocity, health }
+}
+
+///|
+fn insert_component_id_hash_column(
+  store : ComponentIdHashColumns,
+  entity : Int,
+  id : @mecs.ComponentId,
+  value : Int,
+) -> Unit {
+  let column = store.stores.get_or_init(id, fn() {
+    HashMap([], capacity=compare_size)
+  })
+  column[entity] = value
+  let ids = store.component_ids[entity]
+  if !ids.contains(id) {
+    ids.push(id)
+  }
+}
+
+///|
+fn build_component_id_hash_columns(
+  size : Int,
+  sparse_health : Bool,
+) -> ComponentIdHashColumns {
+  let stores : Map[@mecs.ComponentId, @hashmap.HashMap[Int, Int]] = Map(
+    [],
+    capacity=3,
+  )
+  let component_ids : Array[Array[@mecs.ComponentId]] = Array::new(
+    capacity=size,
+  )
+  for _ in 0..<size {
+    component_ids.push([])
+  }
+  let columns = { stores, component_ids }
+  for entity in 0..<size {
+    insert_component_id_hash_column(
+      columns,
+      entity,
+      compare_position_id(),
+      compare_value(entity, 0),
+    )
+    insert_component_id_hash_column(
+      columns,
+      entity,
+      compare_velocity_id(),
+      compare_value(entity, 1),
+    )
+    if !sparse_health || entity % compare_sparse_stride == 0 {
+      insert_component_id_hash_column(
+        columns,
+        entity,
+        compare_health_id(),
+        compare_value(entity, 2),
+      )
+    }
+  }
+  columns
+}
+
+///|
+fn build_dense_indexed_hash_columns(
+  size : Int,
+  sparse_health : Bool,
+) -> DenseIndexedHashColumns {
+  let registry = build_dense_component_registry()
+  let stores : Array[@hashmap.HashMap[Int, Int]] = []
+  stores.push(HashMap([], capacity=size))
+  stores.push(HashMap([], capacity=size))
+  stores.push(HashMap([], capacity=size))
+  let masks : Array[Int] = Array::new(capacity=size)
+  let position = registry.index(compare_position_id())
+  let velocity = registry.index(compare_velocity_id())
+  let health = registry.index(compare_health_id())
+  for entity in 0..<size {
+    let position_store = stores[position.value()]
+    let velocity_store = stores[velocity.value()]
+    position_store[entity] = compare_value(entity, 0)
+    velocity_store[entity] = compare_value(entity, 1)
+    let mut mask = 0
+    mask = compare_mask_add(mask, position)
+    mask = compare_mask_add(mask, velocity)
+    if !sparse_health || entity % compare_sparse_stride == 0 {
+      let health_store = stores[health.value()]
+      health_store[entity] = compare_value(entity, 2)
+      mask = compare_mask_add(mask, health)
+    }
+    masks.push(mask)
+  }
+  { registry, stores, masks }
 }
 
 ///|
@@ -261,6 +447,126 @@ fn sum_sparse_secondary_query3_sparse_drive(
       _ => ()
     }
   })
+  total
+}
+
+///|
+fn sum_component_id_hash_query3_dense_drive(
+  store : ComponentIdHashColumns,
+) -> Int {
+  match
+    (
+      store.stores.get(compare_position_id()),
+      store.stores.get(compare_velocity_id()),
+      store.stores.get(compare_health_id()),
+    ) {
+    (Some(position_store), Some(velocity_store), Some(health_store)) => {
+      let mut total = 0
+      position_store.each(fn(entity, position) {
+        match (velocity_store.get(entity), health_store.get(entity)) {
+          (Some(velocity), Some(health)) =>
+            total += position + velocity + health
+          _ => ()
+        }
+      })
+      total
+    }
+    _ => 0
+  }
+}
+
+///|
+fn sum_component_id_hash_query3_sparse_drive(
+  store : ComponentIdHashColumns,
+) -> Int {
+  match
+    (
+      store.stores.get(compare_position_id()),
+      store.stores.get(compare_velocity_id()),
+      store.stores.get(compare_health_id()),
+    ) {
+    (Some(position_store), Some(velocity_store), Some(health_store)) => {
+      let mut total = 0
+      health_store.each(fn(entity, health) {
+        match (position_store.get(entity), velocity_store.get(entity)) {
+          (Some(position), Some(velocity)) =>
+            total += position + velocity + health
+          _ => ()
+        }
+      })
+      total
+    }
+    _ => 0
+  }
+}
+
+///|
+fn sum_dense_indexed_query3_dense_drive(store : DenseIndexedHashColumns) -> Int {
+  let position_index = store.registry.index(compare_position_id())
+  let velocity_index = store.registry.index(compare_velocity_id())
+  let health_index = store.registry.index(compare_health_id())
+  let position_store = store.stores[position_index.value()]
+  let velocity_store = store.stores[velocity_index.value()]
+  let health_store = store.stores[health_index.value()]
+  let mut total = 0
+  position_store.each(fn(entity, position) {
+    match (velocity_store.get(entity), health_store.get(entity)) {
+      (Some(velocity), Some(health)) => total += position + velocity + health
+      _ => ()
+    }
+  })
+  total
+}
+
+///|
+fn sum_dense_indexed_query3_sparse_drive(
+  store : DenseIndexedHashColumns,
+) -> Int {
+  let position_index = store.registry.index(compare_position_id())
+  let velocity_index = store.registry.index(compare_velocity_id())
+  let health_index = store.registry.index(compare_health_id())
+  let position_store = store.stores[position_index.value()]
+  let velocity_store = store.stores[velocity_index.value()]
+  let health_store = store.stores[health_index.value()]
+  let mut total = 0
+  health_store.each(fn(entity, health) {
+    match (position_store.get(entity), velocity_store.get(entity)) {
+      (Some(position), Some(velocity)) => total += position + velocity + health
+      _ => ()
+    }
+  })
+  total
+}
+
+///|
+fn sum_component_id_list_has_query(store : ComponentIdHashColumns) -> Int {
+  let position = compare_position_id()
+  let velocity = compare_velocity_id()
+  let health = compare_health_id()
+  let mut total = 0
+  for entity in 0..<store.component_ids.length() {
+    let ids = store.component_ids[entity]
+    if ids.contains(position) && ids.contains(velocity) && ids.contains(health) {
+      total += entity
+    }
+  }
+  total
+}
+
+///|
+fn sum_dense_indexed_mask_has_query(store : DenseIndexedHashColumns) -> Int {
+  let position = store.registry.index(compare_position_id())
+  let velocity = store.registry.index(compare_velocity_id())
+  let health = store.registry.index(compare_health_id())
+  let mut total = 0
+  for entity in 0..<store.masks.length() {
+    let mask = store.masks[entity]
+    if compare_mask_has(mask, position) &&
+      compare_mask_has(mask, velocity) &&
+      compare_mask_has(mask, health) {
+      total += entity
+    }
+  }
   total
 }
 
@@ -406,6 +712,46 @@ fn despawn_sparse_secondary_columns(store : SparseSecondaryColumns) -> Int {
 }
 
 ///|
+fn despawn_component_id_hash_columns(store : ComponentIdHashColumns) -> Int {
+  let mut total = 0
+  for entity in 0..<store.component_ids.length() {
+    let ids = store.component_ids[entity]
+    for id in ids {
+      match store.stores.get(id) {
+        Some(column) => ignore(column.remove(entity))
+        None => ()
+      }
+      total += 1
+    }
+  }
+  total
+}
+
+///|
+fn despawn_dense_indexed_hash_columns(store : DenseIndexedHashColumns) -> Int {
+  let position = store.registry.index(compare_position_id())
+  let velocity = store.registry.index(compare_velocity_id())
+  let health = store.registry.index(compare_health_id())
+  let mut total = 0
+  for entity in 0..<store.masks.length() {
+    let mask = store.masks[entity]
+    if compare_mask_has(mask, position) {
+      ignore(store.stores[position.value()].remove(entity))
+      total += 1
+    }
+    if compare_mask_has(mask, velocity) {
+      ignore(store.stores[velocity.value()].remove(entity))
+      total += 1
+    }
+    if compare_mask_has(mask, health) {
+      ignore(store.stores[health.value()].remove(entity))
+      total += 1
+    }
+  }
+  total
+}
+
+///|
 fn set_churn(size : Int, rounds : Int) -> Int {
   let live : @set.Set[Int] = Set([])
   let active : Array[Int] = Array::new(capacity=size)
@@ -517,6 +863,12 @@ test "bench storage compare: build dense stores" (b : @bench.T) {
   b.bench(name="component hashmaps build 1000 x3", count=5U, fn() {
     b.keep(build_hash_columns(compare_size, false))
   })
+  b.bench(name="component-id hash build 1000 x3", count=5U, fn() {
+    b.keep(build_component_id_hash_columns(compare_size, false))
+  })
+  b.bench(name="dense-index hash build 1000 x3", count=5U, fn() {
+    b.keep(build_dense_indexed_hash_columns(compare_size, false))
+  })
   b.bench(name="slot secondary build 1000 x3", count=5U, fn() {
     b.keep(build_secondary_columns(compare_size, false))
   })
@@ -530,6 +882,8 @@ test "bench storage compare: dense query3 stores" (b : @bench.T) {
   let nested = build_nested_store(compare_size, false)
   let maps = build_map_columns(compare_size, false)
   let hashes = build_hash_columns(compare_size, false)
+  let component_id_hashes = build_component_id_hash_columns(compare_size, false)
+  let dense_indexes = build_dense_indexed_hash_columns(compare_size, false)
   let secondary = build_secondary_columns(compare_size, false)
   let sparse_secondary = build_sparse_secondary_columns(compare_size, false)
   b.bench(name="nested map dense query3 1000", count=20U, fn() {
@@ -540,6 +894,12 @@ test "bench storage compare: dense query3 stores" (b : @bench.T) {
   })
   b.bench(name="component hashmaps dense query3 1000", count=20U, fn() {
     b.keep(sum_hash_query3_dense_drive(hashes))
+  })
+  b.bench(name="component-id hash dense query3 1000", count=20U, fn() {
+    b.keep(sum_component_id_hash_query3_dense_drive(component_id_hashes))
+  })
+  b.bench(name="dense-index hash dense query3 1000", count=20U, fn() {
+    b.keep(sum_dense_indexed_query3_dense_drive(dense_indexes))
   })
   b.bench(name="slot secondary dense query3 1000", count=20U, fn() {
     b.keep(sum_secondary_query3_dense_drive(secondary))
@@ -554,6 +914,8 @@ test "bench storage compare: sparse query3 stores" (b : @bench.T) {
   let nested = build_nested_store(compare_size, true)
   let maps = build_map_columns(compare_size, true)
   let hashes = build_hash_columns(compare_size, true)
+  let component_id_hashes = build_component_id_hash_columns(compare_size, true)
+  let dense_indexes = build_dense_indexed_hash_columns(compare_size, true)
   let secondary = build_secondary_columns(compare_size, true)
   let sparse_secondary = build_sparse_secondary_columns(compare_size, true)
   b.bench(name="nested map sparse query3 1000", count=20U, fn() {
@@ -571,6 +933,18 @@ test "bench storage compare: sparse query3 stores" (b : @bench.T) {
   b.bench(name="component hashmaps sparse query3 sparse-drive", count=20U, fn() {
     b.keep(sum_hash_query3_sparse_drive(hashes))
   })
+  b.bench(name="component-id hash sparse query3 dense-drive", count=20U, fn() {
+    b.keep(sum_component_id_hash_query3_dense_drive(component_id_hashes))
+  })
+  b.bench(name="component-id hash sparse query3 sparse-drive", count=20U, fn() {
+    b.keep(sum_component_id_hash_query3_sparse_drive(component_id_hashes))
+  })
+  b.bench(name="dense-index hash sparse query3 dense-drive", count=20U, fn() {
+    b.keep(sum_dense_indexed_query3_dense_drive(dense_indexes))
+  })
+  b.bench(name="dense-index hash sparse query3 sparse-drive", count=20U, fn() {
+    b.keep(sum_dense_indexed_query3_sparse_drive(dense_indexes))
+  })
   b.bench(name="slot secondary sparse query3 dense-drive", count=20U, fn() {
     b.keep(sum_secondary_query3_dense_drive(secondary))
   })
@@ -582,6 +956,32 @@ test "bench storage compare: sparse query3 stores" (b : @bench.T) {
   })
   b.bench(name="slot sparse-secondary sparse query3 sparse-drive", count=20U, fn() {
     b.keep(sum_sparse_secondary_query3_sparse_drive(sparse_secondary))
+  })
+}
+
+///|
+test "bench storage compare: component index registry" (b : @bench.T) {
+  let component_id_hashes = build_component_id_hash_columns(compare_size, false)
+  let dense_indexes = build_dense_indexed_hash_columns(compare_size, false)
+  b.bench(name="component-id list has query3 1000", count=20U, fn() {
+    b.keep(sum_component_id_list_has_query(component_id_hashes))
+  })
+  b.bench(name="dense-index mask has query3 1000", count=20U, fn() {
+    b.keep(sum_dense_indexed_mask_has_query(dense_indexes))
+  })
+  b.bench(name="component-id hash despawn 1000", count=5U, fn() {
+    b.keep(
+      despawn_component_id_hash_columns(
+        build_component_id_hash_columns(compare_size, false),
+      ),
+    )
+  })
+  b.bench(name="dense-index hash despawn 1000", count=5U, fn() {
+    b.keep(
+      despawn_dense_indexed_hash_columns(
+        build_dense_indexed_hash_columns(compare_size, false),
+      ),
+    )
   })
 }
 

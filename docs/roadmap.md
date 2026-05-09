@@ -104,6 +104,8 @@ Goal: broaden query expressiveness without making the core brittle.
 - [x] Add entity-returning versions as `Iter2[EntityId, (...)]`.
 - [x] Consider optional filters such as `with`, `without`, and entity-only
       queries.
+- [x] Add typed `QueryFilter` support for `with_component` and
+      `without_component` constraints across `query1` through `query5`.
 - [x] Add tests for duplicate component types in a query and document whether
       they are rejected or treated as repeated reads.
 
@@ -177,12 +179,22 @@ Optimization backlog:
       `Map[ComponentId, @hashmap.HashMap[EntityId, Component]]`.
 - [x] Replace `EntityId = UInt` with an opaque entity handle so users cannot
       pass arbitrary integers as entities.
+- [x] Prototype dense `ComponentIndex` registry plus per-entity component masks
+      for membership and despawn bookkeeping.
+- [ ] Consider replacing per-entity `Array[ComponentId]` metadata with dense
+      component masks after adding a production bitset representation.
 - [ ] Prototype `SlotMap`-allocated entity keys plus per-component
       `SecondaryMap` columns now that the public entity handle is opaque.
 - [x] Keep `@hashmap.HashMap` component columns as the control implementation
       and adopt them for the current backend.
 - [x] Make queries iterate the smallest matching component table instead of
       scanning every entity map.
+- [x] Make filtered `query2` choose sparse required `with_component` filters as
+      query drivers.
+- [ ] Generalize sparse required-filter driver selection to filtered
+      `query3`, `query4`, and `query5`.
+- [ ] Use dense component masks to speed up `without_component` filters and
+      multi-filter membership checks.
 - [x] Use component store lengths so wide queries can choose the cheapest
       driving component deterministically.
 - [x] Cache component stores inside query iterators and probe them directly

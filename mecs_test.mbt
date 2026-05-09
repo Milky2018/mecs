@@ -683,6 +683,96 @@ test "query4 and query5 yield consistent entity rows" {
 }
 
 ///|
+test "query filters support with and without component constraints" {
+  let world = @mecs.World()
+  let with_health = world.spawn_with(
+    (Position::{ x: 1, y: 1 }, Velocity::{ x: 1, y: 0 }, Health::{ value: 10 }),
+  )
+  let without_health = world.spawn_with(
+    (Position::{ x: 2, y: 2 }, Velocity::{ x: 0, y: 1 }),
+  )
+  let with_armor = world.spawn_with(
+    (Position::{ x: 3, y: 3 }, Velocity::{ x: 1, y: 1 }, Health::{ value: 20 }),
+  )
+  try! world.insert_component(with_armor, Armor::{ value: 7 })
+  try! world.insert_component(with_armor, Mana::{ value: 8 })
+
+  let health_filter = QueryFilter::QueryFilter().with_component(
+    _hint=(None : Health?),
+  )
+  let health_rows : Array[(@mecs.EntityId, (Position, Velocity))] = world
+    .query2_entities_filtered(health_filter)
+    .to_array()
+  inspect(health_rows.length(), content="2")
+
+  let health_positions : Array[Position] = world
+    .query1_filtered(health_filter)
+    .to_array()
+  inspect(health_positions.length(), content="2")
+
+  let health_triplets : Array[(Position, Velocity, Health)] = world
+    .query3_filtered(health_filter)
+    .to_array()
+  inspect(health_triplets.length(), content="2")
+
+  let armored_quads : Array[(Position, Velocity, Health, Armor)] = world
+    .query4_filtered(health_filter)
+    .to_array()
+  inspect(armored_quads.length(), content="1")
+
+  let armored_quints : Array[(Position, Velocity, Health, Armor, Mana)] = world
+    .query5_filtered(health_filter)
+    .to_array()
+  inspect(armored_quints.length(), content="1")
+
+  let no_health_filter = QueryFilter::QueryFilter().without_component(
+    _hint=(None : Health?),
+  )
+  let no_health_rows : Array[(@mecs.EntityId, (Position, Velocity))] = world
+    .query2_entities_filtered(no_health_filter)
+    .to_array()
+  inspect(no_health_rows.length(), content="1")
+  inspect(no_health_rows[0].0 == without_health, content="true")
+
+  let health_without_armor = QueryFilter::QueryFilter()
+    .with_component(_hint=(None : Health?))
+    .without_component(_hint=(None : Armor?))
+  let rows : Array[(Position, Velocity)] = world
+    .query2_filtered(health_without_armor)
+    .to_array()
+  inspect(rows.length(), content="1")
+  inspect(
+    health_rows[0].0 == with_health || health_rows[1].0 == with_health,
+    content="true",
+  )
+
+  let impossible = QueryFilter::QueryFilter().without_component(
+    _hint=(None : Position?),
+  )
+  let impossible_rows : Array[(Position, Velocity)] = world
+    .query2_filtered(impossible)
+    .to_array()
+  inspect(impossible_rows.length(), content="0")
+
+  let base_filter : QueryFilter = QueryFilter()
+  let derived_filter = base_filter.with_component(_hint=(None : Health?))
+  let base_filter_rows : Array[(Position, Velocity)] = world
+    .query2_filtered(base_filter)
+    .to_array()
+  let derived_filter_rows : Array[(Position, Velocity)] = world
+    .query2_filtered(derived_filter)
+    .to_array()
+  inspect(base_filter_rows.length(), content="3")
+  inspect(derived_filter_rows.length(), content="2")
+
+  let empty_filter : QueryFilter = QueryFilter()
+  let empty_rows : Array[(Position, Velocity)] = world
+    .query2_filtered(empty_filter)
+    .to_array()
+  inspect(empty_rows.length(), content="3")
+}
+
+///|
 test "duplicate component types in queries are repeated reads" {
   let world = @mecs.World()
   let entity = world.spawn_with(

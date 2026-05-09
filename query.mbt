@@ -117,6 +117,22 @@ pub fn[C : ComponentValue] World::query1_entities(
 }
 
 ///|
+pub fn[C : ComponentValue] World::query1_filtered(
+  self : World,
+  filter : QueryFilter,
+) -> Iter[C] {
+  values_from_entity_rows(self.query1_entities_filtered(filter))
+}
+
+///|
+pub fn[C : ComponentValue] World::query1_entities_filtered(
+  self : World,
+  filter : QueryFilter,
+) -> Iter2[EntityId, C] {
+  self.filter_entity_rows(self.query1_entities(), filter)
+}
+
+///|
 pub fn[A : ComponentValue, B : ComponentValue] World::query2(
   self : World,
 ) -> Iter[(A, B)] {
@@ -211,6 +227,58 @@ pub fn[A : ComponentValue, B : ComponentValue] World::query2_entities(
         }
       }
     })
+  }
+}
+
+///|
+pub fn[A : ComponentValue, B : ComponentValue] World::query2_filtered(
+  self : World,
+  filter : QueryFilter,
+) -> Iter[(A, B)] {
+  values_from_entity_rows(self.query2_entities_filtered(filter))
+}
+
+///|
+pub fn[A : ComponentValue, B : ComponentValue] World::query2_entities_filtered(
+  self : World,
+  filter : QueryFilter,
+) -> Iter2[EntityId, (A, B)] {
+  let a_id = A::component_id()
+  let b_id = B::component_id()
+  let a_len = self.component_store_len(a_id)
+  let b_len = self.component_store_len(b_id)
+  let base_driver = if a_len <= b_len { a_id } else { b_id }
+  let base_len = if a_len <= b_len { a_len } else { b_len }
+  let driver_id = filter.shortest_required_id(self, base_driver, base_len)
+  match self.component_store(driver_id) {
+    Some(driver_store) => {
+      let it = driver_store.iter()
+      let a_store = self.component_store(a_id)
+      let b_store = self.component_store(b_id)
+      Iter2::new(fn() -> (EntityId, (A, B))? {
+        for ;; {
+          let row = match it.next() {
+            Some(row) => row
+            None => break None
+          }
+          let (entity, component) = row
+          if !self.entity_matches_filter_with_driver(
+              entity, filter, driver_id, component,
+            ) {
+            continue
+          }
+          match
+            (
+              component_from_store(a_store, entity),
+              component_from_store(b_store, entity),
+            ) {
+            (Some(a), Some(b)) => break Some((entity, (a, b)))
+            _ => continue
+          }
+        }
+      })
+    }
+    None => Iter2::new(fn() -> (EntityId, (A, B))? { None })
   }
 }
 
@@ -382,6 +450,22 @@ pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3
 }
 
 ///|
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3_filtered(
+  self : World,
+  filter : QueryFilter,
+) -> Iter[(A, B, C)] {
+  values_from_entity_rows(self.query3_entities_filtered(filter))
+}
+
+///|
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3_entities_filtered(
+  self : World,
+  filter : QueryFilter,
+) -> Iter2[EntityId, (A, B, C)] {
+  self.filter_entity_rows(self.query3_entities(), filter)
+}
+
+///|
 pub fn[
   A : ComponentValue,
   B : ComponentValue,
@@ -515,6 +599,32 @@ pub fn[
       None => Iter::new(fn() -> (A, B, C, D)? { None })
     }
   }
+}
+
+///|
+pub fn[
+  A : ComponentValue,
+  B : ComponentValue,
+  C : ComponentValue,
+  D : ComponentValue,
+] World::query4_filtered(
+  self : World,
+  filter : QueryFilter,
+) -> Iter[(A, B, C, D)] {
+  values_from_entity_rows(self.query4_entities_filtered(filter))
+}
+
+///|
+pub fn[
+  A : ComponentValue,
+  B : ComponentValue,
+  C : ComponentValue,
+  D : ComponentValue,
+] World::query4_entities_filtered(
+  self : World,
+  filter : QueryFilter,
+) -> Iter2[EntityId, (A, B, C, D)] {
+  self.filter_entity_rows(self.query4_entities(), filter)
 }
 
 ///|
@@ -954,6 +1064,34 @@ pub fn[
       }
     })
   }
+}
+
+///|
+pub fn[
+  A : ComponentValue,
+  B : ComponentValue,
+  C : ComponentValue,
+  D : ComponentValue,
+  E : ComponentValue,
+] World::query5_filtered(
+  self : World,
+  filter : QueryFilter,
+) -> Iter[(A, B, C, D, E)] {
+  values_from_entity_rows(self.query5_entities_filtered(filter))
+}
+
+///|
+pub fn[
+  A : ComponentValue,
+  B : ComponentValue,
+  C : ComponentValue,
+  D : ComponentValue,
+  E : ComponentValue,
+] World::query5_entities_filtered(
+  self : World,
+  filter : QueryFilter,
+) -> Iter2[EntityId, (A, B, C, D, E)] {
+  self.filter_entity_rows(self.query5_entities(), filter)
 }
 
 ///|
