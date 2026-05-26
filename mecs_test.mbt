@@ -57,17 +57,17 @@ extenum @mecs.Resource += {
 }
 
 ///|
-impl @mecs.ComponentValue for Position with component_id() {
+impl @mecs.ComponentValue for Position with fn component_id() {
   ComponentId("Position")
 }
 
 ///|
-impl @mecs.ComponentValue for Position with to_component(self) {
+impl @mecs.ComponentValue for Position with fn to_component(self) {
   Position(self)
 }
 
 ///|
-impl @mecs.ComponentValue for Position with from_component(component) {
+impl @mecs.ComponentValue for Position with fn from_component(component) {
   match component {
     Position(value) => Some(value)
     _ => None
@@ -75,17 +75,17 @@ impl @mecs.ComponentValue for Position with from_component(component) {
 }
 
 ///|
-impl @mecs.ComponentValue for Velocity with component_id() {
+impl @mecs.ComponentValue for Velocity with fn component_id() {
   ComponentId("Velocity")
 }
 
 ///|
-impl @mecs.ComponentValue for Velocity with to_component(self) {
+impl @mecs.ComponentValue for Velocity with fn to_component(self) {
   Velocity(self)
 }
 
 ///|
-impl @mecs.ComponentValue for Velocity with from_component(component) {
+impl @mecs.ComponentValue for Velocity with fn from_component(component) {
   match component {
     Velocity(value) => Some(value)
     _ => None
@@ -93,17 +93,17 @@ impl @mecs.ComponentValue for Velocity with from_component(component) {
 }
 
 ///|
-impl @mecs.ComponentValue for Health with component_id() {
+impl @mecs.ComponentValue for Health with fn component_id() {
   ComponentId("Health")
 }
 
 ///|
-impl @mecs.ComponentValue for Health with to_component(self) {
+impl @mecs.ComponentValue for Health with fn to_component(self) {
   Health(self)
 }
 
 ///|
-impl @mecs.ComponentValue for Health with from_component(component) {
+impl @mecs.ComponentValue for Health with fn from_component(component) {
   match component {
     Health(value) => Some(value)
     _ => None
@@ -111,17 +111,17 @@ impl @mecs.ComponentValue for Health with from_component(component) {
 }
 
 ///|
-impl @mecs.ComponentValue for Mana with component_id() {
+impl @mecs.ComponentValue for Mana with fn component_id() {
   ComponentId("Mana")
 }
 
 ///|
-impl @mecs.ComponentValue for Mana with to_component(self) {
+impl @mecs.ComponentValue for Mana with fn to_component(self) {
   Mana(self)
 }
 
 ///|
-impl @mecs.ComponentValue for Mana with from_component(component) {
+impl @mecs.ComponentValue for Mana with fn from_component(component) {
   match component {
     Mana(value) => Some(value)
     _ => None
@@ -129,17 +129,17 @@ impl @mecs.ComponentValue for Mana with from_component(component) {
 }
 
 ///|
-impl @mecs.ComponentValue for Armor with component_id() {
+impl @mecs.ComponentValue for Armor with fn component_id() {
   ComponentId("Armor")
 }
 
 ///|
-impl @mecs.ComponentValue for Armor with to_component(self) {
+impl @mecs.ComponentValue for Armor with fn to_component(self) {
   Armor(self)
 }
 
 ///|
-impl @mecs.ComponentValue for Armor with from_component(component) {
+impl @mecs.ComponentValue for Armor with fn from_component(component) {
   match component {
     Armor(value) => Some(value)
     _ => None
@@ -147,17 +147,17 @@ impl @mecs.ComponentValue for Armor with from_component(component) {
 }
 
 ///|
-impl @mecs.ResourceValue for StepCount with resource_id() {
+impl @mecs.ResourceValue for StepCount with fn resource_id() {
   ResourceId("StepCount")
 }
 
 ///|
-impl @mecs.ResourceValue for StepCount with to_resource(self) {
+impl @mecs.ResourceValue for StepCount with fn to_resource(self) {
   StepCount(self)
 }
 
 ///|
-impl @mecs.ResourceValue for StepCount with from_resource(resource) {
+impl @mecs.ResourceValue for StepCount with fn from_resource(resource) {
   match resource {
     StepCount(value) => Some(value)
     _ => None
@@ -165,17 +165,17 @@ impl @mecs.ResourceValue for StepCount with from_resource(resource) {
 }
 
 ///|
-impl @mecs.ComponentValue for PositionAlias with component_id() {
+impl @mecs.ComponentValue for PositionAlias with fn component_id() {
   ComponentId("Position")
 }
 
 ///|
-impl @mecs.ComponentValue for PositionAlias with to_component(self) {
+impl @mecs.ComponentValue for PositionAlias with fn to_component(self) {
   PositionAlias(self)
 }
 
 ///|
-impl @mecs.ComponentValue for PositionAlias with from_component(component) {
+impl @mecs.ComponentValue for PositionAlias with fn from_component(component) {
   match component {
     PositionAlias(value) => Some(value)
     _ => None
@@ -183,17 +183,17 @@ impl @mecs.ComponentValue for PositionAlias with from_component(component) {
 }
 
 ///|
-impl @mecs.ResourceValue for StepCountAlias with resource_id() {
+impl @mecs.ResourceValue for StepCountAlias with fn resource_id() {
   ResourceId("StepCount")
 }
 
 ///|
-impl @mecs.ResourceValue for StepCountAlias with to_resource(self) {
+impl @mecs.ResourceValue for StepCountAlias with fn to_resource(self) {
   StepCountAlias(self)
 }
 
 ///|
-impl @mecs.ResourceValue for StepCountAlias with from_resource(resource) {
+impl @mecs.ResourceValue for StepCountAlias with fn from_resource(resource) {
   match resource {
     StepCountAlias(value) => Some(value)
     _ => None

@@ -1,10 +1,10 @@
 ///|
 pub(open) trait Bundle {
-  insert_into(Self, World, EntityId) -> Unit
+  fn insert_into(Self, World, EntityId) -> Unit
 }
 
 ///|
-pub impl[A : ComponentValue, B : ComponentValue] Bundle for (A, B) with insert_into(
+pub impl[A : ComponentValue, B : ComponentValue] Bundle for (A, B) with fn insert_into(
   bundle : (A, B),
   world : World,
   entity : EntityId,
@@ -19,7 +19,7 @@ pub impl[A : ComponentValue, B : ComponentValue, C : ComponentValue] Bundle for 
   A,
   B,
   C,
-) with insert_into(bundle : (A, B, C), world : World, entity : EntityId) {
+) with fn insert_into(bundle : (A, B, C), world : World, entity : EntityId) {
   let (a, b, c) = bundle
   try! world.insert_component(entity, a)
   try! world.insert_component(entity, b)
@@ -32,7 +32,7 @@ pub impl[
   B : ComponentValue,
   C : ComponentValue,
   D : ComponentValue,
-] Bundle for (A, B, C, D) with insert_into(
+] Bundle for (A, B, C, D) with fn insert_into(
   bundle : (A, B, C, D),
   world : World,
   entity : EntityId,
