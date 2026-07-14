@@ -10,4 +10,8 @@ license = "Apache-2.0"
 
 keywords = [ "ECS", "game" ]
 
-description = "A type-safe ECS library in MoonBit using extensible enums."
+description = "A performance-first ECS experiment for MoonBit."
+
+import {
+  "moonbitlang/async@0.20.1",
+}
