@@ -1,10 +1,6 @@
 name = "Milky2018/mecs"
 
-version = "0.1.0"
-
-import {
-  "Milky2018/slotmap@0.1.2",
-}
+version = "0.2.0"
 
 readme = "README.mbt.md"
 
