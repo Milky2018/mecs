@@ -1,4 +1,4 @@
-warnings = "-79"
+warnings = "-79-20"
 
 import {
   "moonbitlang/core/hashmap",
