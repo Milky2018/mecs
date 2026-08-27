@@ -4,3 +4,7 @@ import {
   "moonbitlang/core/hashmap",
   "moonbitlang/core/set",
 }
+
+import {
+  "moonbitlang/core/bench",
+} for "test"

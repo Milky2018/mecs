@@ -1,0 +1,37 @@
+Command:
+moon bench --package Milky2018/mecs/archived --file mecs_bench_test.mbt --target wasm --release --no-parallelize
+
+[Milky2018/mecs] bench archived/mecs_bench_test.mbt:330 ("bench ecs: spawn") ok
+name                time (mean ± σ)         range (min … max)
+spawn 1000 entities  326.02 µs ±  15.44 µs   294.57 µs … 337.83 µs  in 20 ×    301 runs
+[Milky2018/mecs] bench archived/mecs_bench_test.mbt:341 ("bench ecs: despawn") ok
+name                  time (mean ± σ)         range (min … max)
+despawn 1000 entities  483.28 µs ±  25.21 µs   451.09 µs … 510.14 µs  in 20 ×    208 runs
+[Milky2018/mecs] bench archived/mecs_bench_test.mbt:356 ("bench ecs: insert component") ok
+name                   time (mean ± σ)         range (min … max)
+insert 1000 components  802.99 µs ±  36.52 µs   734.93 µs … 830.14 µs  in 20 ×    120 runs
+[Milky2018/mecs] bench archived/mecs_bench_test.mbt:370 ("bench ecs: remove component") ok
+name                   time (mean ± σ)         range (min … max)
+remove 1000 components    1.76 ms ± 107.17 µs     1.64 ms …   1.91 ms  in 20 ×     54 runs
+[Milky2018/mecs] bench archived/mecs_bench_test.mbt:386 ("bench ecs: query") ok
+name                         time (mean ± σ)         range (min … max)
+query1 over 1000 entities      50.43 µs ±   2.48 µs    45.84 µs …  52.32 µs  in 100 ×   1926 runs
+for_each1 over 1000 entities   10.38 µs ± 486.65 ns     9.43 µs …  10.76 µs  in 100 ×  10163 runs
+query2 over 1000 entities     123.14 µs ±   6.13 µs   112.73 µs … 128.53 µs  in 100 ×    867 runs
+for_each2 over 1000 entities   49.37 µs ±   3.11 µs    45.90 µs …  53.47 µs  in 100 ×   1888 runs
+query3 over 1000 entities     137.36 µs ±   8.01 µs   127.72 µs … 148.89 µs  in 100 ×    780 runs
+for_each3 over 1000 entities   78.86 µs ±   3.99 µs    72.59 µs …  82.69 µs  in 100 ×   1227 runs
+query4 over 1000 entities     171.32 µs ±   9.38 µs   157.12 µs … 181.42 µs  in 100 ×    552 runs
+for_each4 over 1000 entities  131.93 µs ±   6.53 µs   120.54 µs … 138.02 µs  in 100 ×    828 runs
+query5 over 1000 entities     198.92 µs ±   9.35 µs   182.63 µs … 206.90 µs  in 100 ×    489 runs
+for_each5 over 1000 entities  121.77 µs ±   6.93 µs   116.25 µs … 136.10 µs  in 100 ×    831 runs
+[Milky2018/mecs] bench archived/mecs_bench_test.mbt:476 ("bench ecs: sparse query") ok
+name                                              time (mean ± σ)         range (min … max)
+sparse query3 over 1000 entities                    35.68 µs ±   1.60 µs    34.10 µs …  39.55 µs  in 100 ×   2895 runs
+sparse for_each3 over 1000 entities                 23.28 µs ±   1.29 µs    21.42 µs …  24.61 µs  in 100 ×   4085 runs
+filtered query2 with health over 1000 entities      53.85 µs ±   2.61 µs    49.43 µs …  56.29 µs  in 100 ×   1897 runs
+filtered query2 without health over 1000 entities  285.51 µs ±  13.86 µs   260.19 µs … 297.50 µs  in 100 ×    340 runs
+[Milky2018/mecs] bench archived/mecs_bench_test.mbt:520 ("bench ecs: resources") ok
+name                               time (mean ± σ)         range (min … max)
+set/get/remove resource 1000 times  398.75 µs ±  24.21 µs   360.76 µs … 441.75 µs  in 50 ×    224 runs
+Total tests: 7, passed: 7, failed: 0.
