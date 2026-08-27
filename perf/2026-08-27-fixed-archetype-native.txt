@@ -1,0 +1,39 @@
+Toolchain:
+moon 0.1.20260826 (4bca472 2026-08-26)
+moonc v0.10.10+62b3fef32-nightly (2026-08-26)
+moonrun 0.1.20260826 (4bca472 2026-08-26)
+
+Command:
+moon bench --package Milky2018/mecs --file mecs_bench_test.mbt --target native --release --no-parallelize
+
+[Milky2018/mecs] bench mecs_bench_test.mbt:155 ("bench fixed archetype: spawn") ok
+name                         time (mean ± σ)         range (min … max)
+spawn 1000 valtype entities    65.89 µs ±   1.47 µs    63.68 µs …  68.58 µs  in 20 ×   1499 runs
+spawn 1000 ordinary entities   76.53 µs ±   1.82 µs    73.06 µs …  79.16 µs  in 20 ×   1412 runs
+[Milky2018/mecs] bench mecs_bench_test.mbt:167 ("bench fixed archetype: query2 read") ok
+name                            time (mean ± σ)         range (min … max)
+query2 per entity 1000 valtype     1.22 µs ±  34.08 ns     1.17 µs …   1.29 µs  in 100 ×  82589 runs
+query2 per entity 1000 ordinary    1.86 µs ±  56.83 ns     1.76 µs …   1.96 µs  in 100 ×  44473 runs
+query2 batch 1000 valtype        609.38 ns ±  16.77 ns   587.03 ns … 635.31 ns  in 100 × 100000 runs
+query2 batch 1000 ordinary       610.78 ns ±  46.04 ns   583.45 ns … 784.47 ns  in 100 × 100000 runs
+
+Write group repeated separately after an anomalously noisy first batch-valtype sample:
+moon bench --package Milky2018/mecs --file mecs_bench_test.mbt --index 2 --target native --release --no-parallelize
+
+[Milky2018/mecs] bench mecs_bench_test.mbt:203 ("bench fixed archetype: query2 write") ok
+name                                        time (mean ± σ)         range (min … max)
+query2 write+check per entity 1000 valtype              2.47 µs ±  58.23 ns     2.40 µs …   2.60 µs  in 100 ×  41463 runs
+query2 write+check per entity 1000 ordinary replace     8.62 µs ± 171.95 ns     8.33 µs …   8.92 µs  in 100 ×  11880 runs
+query2 write+check per entity 1000 ordinary in-place    3.65 µs ±  52.61 ns     3.55 µs …   3.74 µs  in 100 ×  27668 runs
+query2 write+check batch 1000 valtype                   1.40 µs ±  41.34 ns     1.36 µs …   1.52 µs  in 100 ×  71274 runs
+query2 write+check batch 1000 ordinary replace          6.61 µs ± 134.44 ns     6.45 µs …   6.98 µs  in 100 ×  15318 runs
+query2 write+check batch 1000 ordinary in-place         2.51 µs ±  65.03 ns     2.41 µs …   2.62 µs  in 100 ×  41286 runs
+Total tests: 3, passed: 3, failed: 0.
+
+Comparable archived commands:
+moon bench --package Milky2018/mecs/archived --file mecs_bench_test.mbt --index 0 --target native --release --no-parallelize
+moon bench --package Milky2018/mecs/archived --file mecs_bench_test.mbt --index 4 --target native --release --no-parallelize
+
+spawn 1000 entities  101.13 µs ±   1.82 µs    98.17 µs … 103.33 µs  in 20 ×    986 runs
+query2 over 1000 entities      36.33 µs ±   1.50 µs    34.75 µs …  39.78 µs  in 100 ×   2847 runs
+for_each2 over 1000 entities   18.08 µs ± 618.31 ns    17.18 µs …  19.40 µs  in 100 ×   5265 runs
