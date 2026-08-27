@@ -1,0 +1,191 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "Milky2018/mecs/archived"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn component_id(String) -> ComponentId
+
+pub fn resource_id(String) -> ResourceId
+
+// Errors
+pub(all) suberror EcsError {
+  EntityMissing(EntityId)
+  ComponentMissing(EntityId, ComponentId)
+  ComponentVariantMismatch(EntityId, ComponentId)
+  ResourceMissing(ResourceId)
+  ResourceVariantMismatch(ResourceId)
+} derive(Eq, @debug.Debug)
+
+pub suberror NotSpawned {
+  NotSpawned(EntityId)
+}
+
+// Types and methods
+pub struct CommandSystem {
+  name : String
+  func : (World, Commands) -> Unit
+}
+pub fn CommandSystem::CommandSystem((World, Commands) -> Unit, name? : String) -> Self
+pub fn CommandSystem::label(Self) -> SystemLabel
+
+type Commands
+pub fn Commands::despawn(Self, EntityId) -> Unit
+pub fn[C : ComponentValue] Commands::insert_component(Self, EntityId, C) -> Unit
+pub fn[C : ComponentValue] Commands::remove_component(Self, EntityId, _hint? : C?) -> Unit
+pub fn[R : ResourceValue] Commands::remove_resource(Self, _hint? : R?) -> Unit
+pub fn[R : ResourceValue] Commands::set_resource(Self, R) -> Unit
+pub fn Commands::spawn(Self) -> EntityId
+
+pub extenum Component {
+}
+
+pub struct ComponentId {
+  name : String
+} derive(Eq, Hash, @debug.Debug)
+pub fn ComponentId::ComponentId(String) -> Self
+pub fn ComponentId::name(Self) -> String
+
+type EntityId derive(Eq, Hash, @debug.Debug)
+pub fn EntityId::value(Self) -> UInt
+
+type EntityOps
+pub fn EntityOps::despawn(Self) -> Bool
+pub fn EntityOps::despawn_checked(Self) -> Unit raise EcsError
+pub fn[C : ComponentValue] EntityOps::insert_component(Self, C) -> Unit raise NotSpawned
+pub fn[C : ComponentValue] EntityOps::insert_component_checked(Self, C) -> Unit raise EcsError
+pub fn[C : ComponentValue] EntityOps::remove_component(Self, _hint? : C?) -> Unit
+pub fn[C : ComponentValue] EntityOps::remove_component_checked(Self, _hint? : C?) -> Unit raise EcsError
+
+type QueryFilter
+pub fn QueryFilter::QueryFilter() -> Self
+pub fn QueryFilter::is_empty(Self) -> Bool
+pub fn[C : ComponentValue] QueryFilter::with_component(Self, _hint? : C?) -> Self
+pub fn[C : ComponentValue] QueryFilter::without_component(Self, _hint? : C?) -> Self
+
+pub extenum Resource {
+}
+
+pub struct ResourceId {
+  name : String
+} derive(Eq, Hash, @debug.Debug)
+pub fn ResourceId::ResourceId(String) -> Self
+pub fn ResourceId::name(Self) -> String
+
+pub(all) enum Stage {
+  Startup
+  Update
+  FixedUpdate
+  Cleanup
+} derive(Eq, @debug.Debug)
+
+pub struct System {
+  name : String
+  func : (World) -> Unit
+}
+pub fn System::System((World) -> Unit, name? : String) -> Self
+pub fn System::label(Self) -> SystemLabel
+
+pub struct SystemLabel {
+  name : String
+} derive(Eq, Hash, @debug.Debug)
+pub fn SystemLabel::SystemLabel(String) -> Self
+pub fn SystemLabel::name(Self) -> String
+
+type World
+pub fn World::World() -> Self
+pub fn World::add_command_system(Self, CommandSystem) -> Unit
+pub fn World::add_command_system_fn(Self, (Self, Commands) -> Unit, name? : String) -> Unit
+pub fn World::add_command_system_fn_to_stage(Self, Stage, (Self, Commands) -> Unit, name? : String, before? : Array[SystemLabel], after? : Array[SystemLabel], run_if? : (Self) -> Bool) -> Unit
+pub fn World::add_command_system_to_stage(Self, Stage, CommandSystem, before? : Array[SystemLabel], after? : Array[SystemLabel], run_if? : (Self) -> Bool) -> Unit
+pub fn World::add_system(Self, System) -> Unit
+pub fn World::add_system_fn(Self, (Self) -> Unit, name? : String) -> Unit
+pub fn World::add_system_fn_to_stage(Self, Stage, (Self) -> Unit, name? : String, before? : Array[SystemLabel], after? : Array[SystemLabel], run_if? : (Self) -> Bool) -> Unit
+pub fn World::add_system_to_stage(Self, Stage, System, before? : Array[SystemLabel], after? : Array[SystemLabel], run_if? : (Self) -> Bool) -> Unit
+pub fn World::apply_commands(Self, Commands) -> Unit raise NotSpawned
+pub fn World::commands(Self) -> Commands
+pub fn World::despawn(Self, EntityId) -> Bool
+pub fn World::despawn_checked(Self, EntityId) -> Unit raise EcsError
+pub fn[A : ComponentValue, B : ComponentValue] World::each2(Self, (A, B) -> Unit) -> Unit raise NotSpawned
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::each3(Self, (A, B, C) -> Unit) -> Unit raise NotSpawned
+pub fn World::entity_ops(Self, EntityId) -> EntityOps
+pub fn World::fixed_step(Self) -> Unit raise NotSpawned
+pub fn[C : ComponentValue] World::for_each1(Self, (C) -> Unit) -> Unit
+pub fn[A : ComponentValue, B : ComponentValue] World::for_each2(Self, (A, B) -> Unit) -> Unit
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::for_each3(Self, (A, B, C) -> Unit) -> Unit
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue] World::for_each4(Self, (A, B, C, D) -> Unit) -> Unit
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue, E : ComponentValue] World::for_each5(Self, (A, B, C, D, E) -> Unit) -> Unit
+pub fn[C : ComponentValue] World::get_component(Self, EntityId) -> C?
+pub fn[C : ComponentValue] World::get_component_checked(Self, EntityId) -> C raise EcsError
+pub fn[R : ResourceValue] World::get_resource(Self) -> R
+pub fn[R : ResourceValue] World::get_resource_checked(Self) -> R raise EcsError
+pub fn[C : ComponentValue] World::has_component(Self, EntityId, _hint? : C?) -> Bool
+pub fn[R : ResourceValue] World::has_resource(Self, _hint? : R?) -> Bool
+pub fn[C : ComponentValue] World::insert_component(Self, EntityId, C) -> Unit raise NotSpawned
+pub fn[C : ComponentValue] World::insert_component_checked(Self, EntityId, C) -> Unit raise EcsError
+pub fn World::is_alive(Self, EntityId) -> Bool
+pub fn[Q : Query] World::query(Self) -> Iter[Q]
+pub fn[C : ComponentValue] World::query1(Self) -> Iter[C]
+pub fn[C : ComponentValue] World::query1_entities(Self) -> Iter2[EntityId, C]
+pub fn[C : ComponentValue] World::query1_entities_filtered(Self, QueryFilter) -> Iter2[EntityId, C]
+pub fn[C : ComponentValue] World::query1_filtered(Self, QueryFilter) -> Iter[C]
+pub fn[A : ComponentValue, B : ComponentValue] World::query2(Self) -> Iter[(A, B)]
+pub fn[A : ComponentValue, B : ComponentValue] World::query2_entities(Self) -> Iter2[EntityId, (A, B)]
+pub fn[A : ComponentValue, B : ComponentValue] World::query2_entities_filtered(Self, QueryFilter) -> Iter2[EntityId, (A, B)]
+pub fn[A : ComponentValue, B : ComponentValue] World::query2_filtered(Self, QueryFilter) -> Iter[(A, B)]
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3(Self) -> Iter[(A, B, C)]
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3_entities(Self) -> Iter2[EntityId, (A, B, C)]
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3_entities_filtered(Self, QueryFilter) -> Iter2[EntityId, (A, B, C)]
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue] World::query3_filtered(Self, QueryFilter) -> Iter[(A, B, C)]
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue] World::query4(Self) -> Iter[(A, B, C, D)]
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue] World::query4_entities(Self) -> Iter2[EntityId, (A, B, C, D)]
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue] World::query4_entities_filtered(Self, QueryFilter) -> Iter2[EntityId, (A, B, C, D)]
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue] World::query4_filtered(Self, QueryFilter) -> Iter[(A, B, C, D)]
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue, E : ComponentValue] World::query5(Self) -> Iter[(A, B, C, D, E)]
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue, E : ComponentValue] World::query5_entities(Self) -> Iter2[EntityId, (A, B, C, D, E)]
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue, E : ComponentValue] World::query5_entities_filtered(Self, QueryFilter) -> Iter2[EntityId, (A, B, C, D, E)]
+pub fn[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue, E : ComponentValue] World::query5_filtered(Self, QueryFilter) -> Iter[(A, B, C, D, E)]
+pub fn[C : ComponentValue] World::remove_component(Self, EntityId, _hint? : C?) -> Unit
+pub fn[C : ComponentValue] World::remove_component_checked(Self, EntityId, _hint? : C?) -> Unit raise EcsError
+pub fn[R : ResourceValue] World::remove_resource(Self, _hint? : R?) -> Unit
+pub fn[R : ResourceValue] World::remove_resource_checked(Self, _hint? : R?) -> Unit raise EcsError
+pub fn[C : ComponentValue] World::require_component(Self, EntityId) -> C
+pub fn World::run_stage(Self, Stage) -> Unit raise NotSpawned
+pub fn[R : ResourceValue] World::set_resource(Self, R) -> Unit
+pub fn World::spawn(Self) -> EntityId
+pub fn[B : Bundle] World::spawn_with(Self, B) -> EntityId
+pub fn World::step(Self) -> Unit raise NotSpawned
+pub fn World::system_order(Self, stage? : Stage) -> Array[SystemLabel]
+pub fn[R : ResourceValue] World::try_get_resource(Self) -> R?
+
+// Type aliases
+
+// Traits
+pub(open) trait Bundle {
+  fn insert_into(Self, World, EntityId) -> Unit
+}
+pub impl[A : ComponentValue, B : ComponentValue] Bundle for (A, B)
+pub impl[A : ComponentValue, B : ComponentValue, C : ComponentValue] Bundle for (A, B, C)
+pub impl[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue] Bundle for (A, B, C, D)
+
+pub(open) trait ComponentValue {
+  fn component_id() -> ComponentId
+  fn to_component(Self) -> Component
+  fn from_component(Component) -> Self?
+}
+
+pub(open) trait Query {
+  fn iter(World) -> Iter[Self]
+}
+pub impl[A : ComponentValue, B : ComponentValue] Query for (A, B)
+pub impl[A : ComponentValue, B : ComponentValue, C : ComponentValue] Query for (A, B, C)
+pub impl[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue] Query for (A, B, C, D)
+pub impl[A : ComponentValue, B : ComponentValue, C : ComponentValue, D : ComponentValue, E : ComponentValue] Query for (A, B, C, D, E)
+
+pub(open) trait ResourceValue {
+  fn resource_id() -> ResourceId
+  fn to_resource(Self) -> Resource
+  fn from_resource(Resource) -> Self?
+}

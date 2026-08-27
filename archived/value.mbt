@@ -1,0 +1,61 @@
+///|
+pub struct ComponentId {
+  name : String
+} derive(Eq, Hash, Debug)
+
+///|
+pub fn ComponentId::ComponentId(name : String) -> Self {
+  guard !name.is_empty() else { abort("component id cannot be empty") }
+  { name, }
+}
+
+///|
+pub fn ComponentId::name(self : Self) -> String {
+  self.name
+}
+
+///|
+pub fn component_id(name : String) -> ComponentId {
+  ComponentId(name)
+}
+
+///|
+pub struct ResourceId {
+  name : String
+} derive(Eq, Hash, Debug)
+
+///|
+pub fn ResourceId::ResourceId(name : String) -> Self {
+  guard !name.is_empty() else { abort("resource id cannot be empty") }
+  { name, }
+}
+
+///|
+pub fn ResourceId::name(self : Self) -> String {
+  self.name
+}
+
+///|
+pub fn resource_id(name : String) -> ResourceId {
+  ResourceId(name)
+}
+
+///|
+pub extenum Component {}
+
+///|
+pub extenum Resource {}
+
+///|
+pub(open) trait ComponentValue {
+  fn component_id() -> ComponentId
+  fn to_component(Self) -> Component
+  fn from_component(Component) -> Self?
+}
+
+///|
+pub(open) trait ResourceValue {
+  fn resource_id() -> ResourceId
+  fn to_resource(Self) -> Resource
+  fn from_resource(Resource) -> Self?
+}
