@@ -9,6 +9,26 @@ pub extend Entity with Eq::{equal, not_equal}
 pub extend Entity with @debug.Debug::{to_repr}
 
 ///|
+/// A process-local identity allocated monotonically for each world.
+struct WorldId(UInt64) derive(Eq, Debug)
+
+///|
+pub extend WorldId with Eq::{equal, not_equal}
+
+///|
+pub extend WorldId with @debug.Debug::{to_repr}
+
+///|
+let next_world_id : Ref[UInt64] = Ref(0UL)
+
+///|
+fn allocate_world_id() -> WorldId {
+  let id = next_world_id.val
+  next_world_id.val += 1UL
+  WorldId(id)
+}
+
+///|
 priv struct Archetype {
   signature : UInt64
   entities : Array[Entity]
@@ -18,7 +38,7 @@ priv struct Archetype {
 /// A typed lookup from an archetype id to its contiguous component column.
 struct ComponentKey[T] {
   bit : UInt64
-  owner : Array[Unit]
+  world_id : WorldId
   columns : Array[Array[T]?]
 }
 
@@ -32,7 +52,7 @@ struct ComponentEntry[T] {
 ///|
 pub(open) trait Bundle {
   fn signature(Self) -> UInt64
-  fn valid(Self, Array[Unit]) -> Bool
+  fn valid(Self, WorldId) -> Bool
   fn prepare(Self, Int) -> Unit
   fn append(Self, Int) -> Unit
 }
@@ -43,8 +63,8 @@ pub impl[T] Bundle for ComponentEntry[T] with fn signature(self) {
 }
 
 ///|
-pub impl[T] Bundle for ComponentEntry[T] with fn valid(self, owner) {
-  physical_equal(self.key.owner, owner)
+pub impl[T] Bundle for ComponentEntry[T] with fn valid(self, world_id) {
+  self.key.world_id == world_id
 }
 
 ///|
@@ -66,9 +86,9 @@ pub impl[L : Bundle, R : Bundle] Bundle for (L, R) with fn signature(self) {
 }
 
 ///|
-pub impl[L : Bundle, R : Bundle] Bundle for (L, R) with fn valid(self, owner) {
-  self.0.valid(owner) &&
-  self.1.valid(owner) &&
+pub impl[L : Bundle, R : Bundle] Bundle for (L, R) with fn valid(self, world_id) {
+  self.0.valid(world_id) &&
+  self.1.valid(world_id) &&
   (self.0.signature() & self.1.signature()) == 0UL
 }
 
@@ -92,7 +112,7 @@ pub impl[L : Bundle, R : Bundle] Bundle for (L, R) with fn append(
 
 ///|
 struct World {
-  owner : Array[Unit]
+  id : WorldId
   mut next_entity : Int
   mut next_component : Int
   locations : Array[(Int, Int)]
@@ -103,7 +123,7 @@ struct World {
 ///|
 pub fn World::new() -> World {
   {
-    owner: [],
+    id: allocate_world_id(),
     next_entity: 0,
     next_component: 0,
     locations: [],
@@ -118,7 +138,7 @@ pub fn[T] World::component(self : World) -> ComponentKey[T] {
   guard self.next_component < 63 else { abort("too many component types") }
   let id = self.next_component
   self.next_component += 1
-  { bit: 1UL << id, owner: self.owner, columns: [], }
+  { bit: 1UL << id, world_id: self.id, columns: [], }
 }
 
 ///|
@@ -168,7 +188,7 @@ fn[B : Bundle] World::archetype(
 ///|
 /// Spawns directly into the final archetype. Components cannot change later.
 pub fn[B : Bundle] World::spawn(self : World, bundle : B) -> Entity {
-  guard bundle.valid(self.owner) else { abort("invalid component bundle") }
+  guard bundle.valid(self.id) else { abort("invalid component bundle") }
   let archetype = self.archetype(bundle.signature(), bundle)
   let row = self.archetypes[archetype].entities.length()
   let entity = Entity(self.next_entity)
@@ -208,8 +228,7 @@ pub fn[A, B] World::query2(
   a : ComponentKey[A],
   b : ComponentKey[B],
 ) -> Query2[A, B] {
-  guard physical_equal(a.owner, self.owner) &&
-    physical_equal(b.owner, self.owner) else {
+  guard a.world_id == self.id && b.world_id == self.id else {
     abort("component key belongs to another world")
   }
   { world: self, a, b, matches: [], scanned: 0, }

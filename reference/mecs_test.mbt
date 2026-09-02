@@ -66,3 +66,11 @@ test "ordinary components use the same typed query path" {
   .for_each(fn(_, a, b) { total.val += a.value + b.value })
   assert_eq(total.val, 7)
 }
+
+///|
+test "panic spawn rejects a component key from another world" {
+  let first = @reference.World::new()
+  let second = @reference.World::new()
+  let position : @reference.ComponentKey[TestPosition] = first.component()
+  ignore(second.spawn(position.entry({ x: 1, y: 2, })))
+}

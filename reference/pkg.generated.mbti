@@ -14,7 +14,7 @@ type ComponentEntry[T]
 pub fn[T] ComponentEntry::append(Self[T], Int) -> Unit
 pub fn[T] ComponentEntry::prepare(Self[T], Int) -> Unit
 pub fn[T] ComponentEntry::signature(Self[T]) -> UInt64
-pub fn[T] ComponentEntry::valid(Self[T], Array[Unit]) -> Bool
+pub fn[T] ComponentEntry::valid(Self[T], WorldId) -> Bool
 pub impl[T] Bundle for ComponentEntry[T]
 
 type ComponentKey[T]
@@ -38,12 +38,17 @@ pub fn World::new() -> Self
 pub fn[A, B] World::query2(Self, ComponentKey[A], ComponentKey[B]) -> Query2[A, B]
 pub fn[B : Bundle] World::spawn(Self, B) -> Entity
 
+type WorldId derive(Eq, @debug.Debug)
+pub fn WorldId::equal(Self, Self) -> Bool
+pub fn WorldId::not_equal(Self, Self) -> Bool
+pub fn WorldId::to_repr(Self) -> @debug.Repr
+
 // Type aliases
 
 // Traits
 pub(open) trait Bundle {
   fn signature(Self) -> UInt64
-  fn valid(Self, Array[Unit]) -> Bool
+  fn valid(Self, WorldId) -> Bool
   fn prepare(Self, Int) -> Unit
   fn append(Self, Int) -> Unit
 }
