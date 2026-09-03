@@ -8,6 +8,12 @@ cannot be added or removed afterward. Each `ComponentKey[T]` indexes one
 contiguous `Array[T]` per matching archetype, while `Query2[A, B]` caches
 matching archetype ids and resolves typed columns outside the entity loop.
 
+> Historical note: the full results below were measured before archetype
+> identity moved from one `UInt64` to a dynamic `ComponentSet`. A 2026-09-03
+> release-mode spawn smoke test of the dynamic implementation measured 85.92 µs
+> for 1000 valtype entities and 94.56 µs for ordinary entities on Native, and
+> 257.48 µs / 309.24 µs respectively on Wasm. Query workloads were not rerun.
+
 ## Environment
 
 - macOS 26.5.2 (25F84), arm64

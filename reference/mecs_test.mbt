@@ -74,3 +74,26 @@ test "panic spawn rejects a component key from another world" {
   let position : @reference.ComponentKey[TestPosition] = first.component()
   ignore(second.spawn(position.entry({ x: 1, y: 2, })))
 }
+
+///|
+test "component sets grow beyond one machine word" {
+  let world = @reference.World::new()
+  let keys : Array[@reference.ComponentKey[Int]] = []
+  for _ in 0..<2 {
+    keys.push(world.component())
+  }
+  ignore(world.spawn((keys[0].entry(1), keys[1].entry(2))))
+  for _ in 2..<65 {
+    keys.push(world.component())
+  }
+  ignore(world.spawn((keys[0].entry(3), keys[1].entry(4))))
+  ignore(world.spawn((keys[0].entry(10), keys[64].entry(20))))
+  let old_archetype_count = Ref(0)
+  world
+  .query2(keys[0], keys[1])
+  .for_each(fn(_, _, _) { old_archetype_count.val += 1 })
+  assert_eq(old_archetype_count.val, 2)
+  let total = Ref(0)
+  world.query2(keys[0], keys[64]).for_each(fn(_, a, b) { total.val += a + b })
+  assert_eq(total.val, 30)
+}

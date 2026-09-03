@@ -10,13 +10,7 @@ pub extend Entity with @debug.Debug::{to_repr}
 
 ///|
 /// A process-local identity allocated monotonically for each world.
-struct WorldId(UInt64) derive(Eq, Debug)
-
-///|
-pub extend WorldId with Eq::{equal, not_equal}
-
-///|
-pub extend WorldId with @debug.Debug::{to_repr}
+priv struct WorldId(UInt64) derive(Eq)
 
 ///|
 let next_world_id : Ref[UInt64] = Ref(0UL)
@@ -30,14 +24,14 @@ fn allocate_world_id() -> WorldId {
 
 ///|
 priv struct Archetype {
-  signature : UInt64
+  components : ComponentSet
   entities : Array[Entity]
 }
 
 ///|
 /// A typed lookup from an archetype id to its contiguous component column.
 struct ComponentKey[T] {
-  bit : UInt64
+  id : Int
   world_id : WorldId
   columns : Array[Array[T]?]
 }
@@ -50,21 +44,15 @@ struct ComponentEntry[T] {
 }
 
 ///|
-pub(open) trait Bundle {
-  fn signature(Self) -> UInt64
-  fn valid(Self, WorldId) -> Bool
+pub trait Bundle {
+  fn collect(Self, ComponentCollector) -> Unit
   fn prepare(Self, Int) -> Unit
   fn append(Self, Int) -> Unit
 }
 
 ///|
-pub impl[T] Bundle for ComponentEntry[T] with fn signature(self) {
-  self.key.bit
-}
-
-///|
-pub impl[T] Bundle for ComponentEntry[T] with fn valid(self, world_id) {
-  self.key.world_id == world_id
+pub impl[T] Bundle for ComponentEntry[T] with fn collect(self, collector) {
+  collector.insert(self.key.id, self.key.world_id)
 }
 
 ///|
@@ -78,18 +66,15 @@ pub impl[T] Bundle for ComponentEntry[T] with fn append(self, archetype) {
 }
 
 ///|
-pub extend ComponentEntry with Bundle::{append, prepare, signature, valid}
+pub extend ComponentEntry with Bundle::{append, collect, prepare}
 
 ///|
-pub impl[L : Bundle, R : Bundle] Bundle for (L, R) with fn signature(self) {
-  self.0.signature() | self.1.signature()
-}
-
-///|
-pub impl[L : Bundle, R : Bundle] Bundle for (L, R) with fn valid(self, world_id) {
-  self.0.valid(world_id) &&
-  self.1.valid(world_id) &&
-  (self.0.signature() & self.1.signature()) == 0UL
+pub impl[L : Bundle, R : Bundle] Bundle for (L, R) with fn collect(
+  self,
+  collector,
+) {
+  self.0.collect(collector)
+  self.1.collect(collector)
 }
 
 ///|
@@ -117,28 +102,33 @@ struct World {
   mut next_component : Int
   locations : Array[(Int, Int)]
   archetypes : Array[Archetype]
-  archetype_index : @hashmap.HashMap[UInt64, Int]
+  archetype_index : @hashmap.HashMap[UInt64, Array[Int]]
+  component_collector : ComponentCollector
 }
 
 ///|
 pub fn World::new() -> World {
+  let world_id = allocate_world_id()
   {
-    id: allocate_world_id(),
+    id: world_id,
     next_entity: 0,
     next_component: 0,
     locations: [],
     archetypes: [],
     archetype_index: HashMap([]),
+    component_collector: { words: [], world_id, valid: true, },
   }
 }
 
 ///|
-/// Registers a world-local component key. This prototype supports at most 63.
+/// Registers a world-local component key.
 pub fn[T] World::component(self : World) -> ComponentKey[T] {
-  guard self.next_component < 63 else { abort("too many component types") }
   let id = self.next_component
   self.next_component += 1
-  { bit: 1UL << id, world_id: self.id, columns: [], }
+  if id / 64 == self.component_collector.words.length() {
+    self.component_collector.words.push(0UL)
+  }
+  { id, world_id: self.id, columns: [], }
 }
 
 ///|
@@ -168,28 +158,43 @@ fn[T] ComponentKey::column(self : ComponentKey[T], archetype : Int) -> Array[T] 
 }
 
 ///|
-fn[B : Bundle] World::archetype(
-  self : World,
-  signature : UInt64,
-  bundle : B,
-) -> Int {
-  match self.archetype_index.get(signature) {
-    Some(id) => id
-    None => {
-      let id = self.archetypes.length()
-      self.archetypes.push({ signature, entities: [], })
-      self.archetype_index[signature] = id
-      bundle.prepare(id)
-      id
-    }
+fn[B : Bundle] World::archetype(self : World, hash : UInt64, bundle : B) -> Int {
+  match self.archetype_index.get(hash) {
+    Some(candidates) =>
+      for candidate in candidates {
+        if self.archetypes[candidate].components.equals_scratch(
+            self.component_collector.words,
+          ) {
+          return candidate
+        }
+      }
+    None => ()
   }
+  let id = self.archetypes.length()
+  self.archetypes.push({
+    components: ComponentSet::from_scratch(self.component_collector.words),
+    entities: [],
+  })
+  match self.archetype_index.get(hash) {
+    Some(candidates) => candidates.push(id)
+    None => self.archetype_index[hash] = [id]
+  }
+  bundle.prepare(id)
+  id
 }
 
 ///|
 /// Spawns directly into the final archetype. Components cannot change later.
 pub fn[B : Bundle] World::spawn(self : World, bundle : B) -> Entity {
-  guard bundle.valid(self.id) else { abort("invalid component bundle") }
-  let archetype = self.archetype(bundle.signature(), bundle)
+  self.component_collector.reset()
+  bundle.collect(self.component_collector)
+  guard self.component_collector.valid else {
+    abort("invalid component bundle")
+  }
+  let archetype = self.archetype(
+    component_set_hash(self.component_collector.words),
+    bundle,
+  )
   let row = self.archetypes[archetype].entities.length()
   let entity = Entity(self.next_entity)
   self.next_entity += 1
@@ -236,9 +241,9 @@ pub fn[A, B] World::query2(
 
 ///|
 fn[A, B] Query2::refresh(self : Query2[A, B]) -> Unit {
-  let required = self.a.bit | self.b.bit
   for archetype in self.scanned..<self.world.archetypes.length() {
-    if (self.world.archetypes[archetype].signature & required) == required {
+    let components = self.world.archetypes[archetype].components
+    if components.contains(self.a.id) && components.contains(self.b.id) {
       self.matches.push(archetype)
     }
   }
