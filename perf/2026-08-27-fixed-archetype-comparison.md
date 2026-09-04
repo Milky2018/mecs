@@ -13,6 +13,8 @@ matching archetype ids and resolves typed columns outside the entity loop.
 > release-mode spawn smoke test of the dynamic implementation measured 85.92 µs
 > for 1000 valtype entities and 94.56 µs for ordinary entities on Native, and
 > 257.48 µs / 309.24 µs respectively on Wasm. Query workloads were not rerun.
+> The later generational-entity/despawn implementation has not been benchmarked;
+> these timings do not describe that version.
 
 ## Environment
 

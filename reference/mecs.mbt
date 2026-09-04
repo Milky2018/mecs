@@ -1,16 +1,6 @@
 ///|
-/// Fixed-composition archetype storage.
-struct Entity(Int) derive(Eq, Debug)
-
-///|
-pub extend Entity with Eq::{equal, not_equal}
-
-///|
-pub extend Entity with @debug.Debug::{to_repr}
-
-///|
 /// A process-local identity allocated monotonically for each world.
-priv struct WorldId(UInt64) derive(Eq)
+priv struct WorldId(UInt64) derive(Eq, Debug)
 
 ///|
 let next_world_id : Ref[UInt64] = Ref(0UL)
@@ -26,6 +16,7 @@ fn allocate_world_id() -> WorldId {
 priv struct Archetype {
   components : ComponentSet
   entities : Array[Entity]
+  remove_components : (Int) -> Unit
 }
 
 ///|
@@ -46,7 +37,7 @@ struct ComponentEntry[T] {
 ///|
 pub trait Bundle {
   fn collect(Self, ComponentCollector) -> Unit
-  fn prepare(Self, Int) -> Unit
+  fn prepare(Self, Int) -> (Int) -> Unit
   fn append(Self, Int) -> Unit
 }
 
@@ -58,6 +49,8 @@ pub impl[T] Bundle for ComponentEntry[T] with fn collect(self, collector) {
 ///|
 pub impl[T] Bundle for ComponentEntry[T] with fn prepare(self, archetype) {
   self.key.ensure(archetype)
+  let column = self.key.column(archetype)
+  fn(row) { swap_remove_row(column, row) }
 }
 
 ///|
@@ -82,8 +75,12 @@ pub impl[L : Bundle, R : Bundle] Bundle for (L, R) with fn prepare(
   self,
   archetype,
 ) {
-  self.0.prepare(archetype)
-  self.1.prepare(archetype)
+  let remove_left = self.0.prepare(archetype)
+  let remove_right = self.1.prepare(archetype)
+  fn(row) {
+    remove_left(row)
+    remove_right(row)
+  }
 }
 
 ///|
@@ -98,9 +95,10 @@ pub impl[L : Bundle, R : Bundle] Bundle for (L, R) with fn append(
 ///|
 struct World {
   id : WorldId
-  mut next_entity : Int
   mut next_component : Int
-  locations : Array[(Int, Int)]
+  slots : Array[EntitySlot]
+  free_slots : Array[Int]
+  mut active_queries : Int
   archetypes : Array[Archetype]
   archetype_index : @hashmap.HashMap[UInt64, Array[Int]]
   component_collector : ComponentCollector
@@ -111,9 +109,10 @@ pub fn World::new() -> World {
   let world_id = allocate_world_id()
   {
     id: world_id,
-    next_entity: 0,
     next_component: 0,
-    locations: [],
+    slots: [],
+    free_slots: [],
+    active_queries: 0,
     archetypes: [],
     archetype_index: HashMap([]),
     component_collector: { words: [], world_id, valid: true, },
@@ -171,21 +170,24 @@ fn[B : Bundle] World::archetype(self : World, hash : UInt64, bundle : B) -> Int 
     None => ()
   }
   let id = self.archetypes.length()
+  let remove_components = bundle.prepare(id)
   self.archetypes.push({
     components: ComponentSet::from_scratch(self.component_collector.words),
     entities: [],
+    remove_components,
   })
   match self.archetype_index.get(hash) {
     Some(candidates) => candidates.push(id)
     None => self.archetype_index[hash] = [id]
   }
-  bundle.prepare(id)
   id
 }
 
 ///|
-/// Spawns directly into the final archetype. Components cannot change later.
+/// Spawns into the final archetype. Component composition cannot change later.
+/// Panics if called inside a query callback on this world.
 pub fn[B : Bundle] World::spawn(self : World, bundle : B) -> Entity {
+  guard self.active_queries == 0 else { abort("cannot spawn during a query") }
   self.component_collector.reset()
   bundle.collect(self.component_collector)
   guard self.component_collector.valid else {
@@ -196,11 +198,9 @@ pub fn[B : Bundle] World::spawn(self : World, bundle : B) -> Entity {
     bundle,
   )
   let row = self.archetypes[archetype].entities.length()
-  let entity = Entity(self.next_entity)
-  self.next_entity += 1
+  let entity = self.allocate_entity(archetype, row)
   self.archetypes[archetype].entities.push(entity)
   bundle.append(archetype)
-  self.locations.push((archetype, row))
   entity
 }
 
@@ -210,7 +210,8 @@ pub fn[T] World::get(
   entity : Entity,
   key : ComponentKey[T],
 ) -> T? {
-  let (archetype, row) = self.locations[entity.0]
+  guard key.world_id == self.id else { None }
+  guard self.location(entity) is Some((archetype, row)) else { None }
   match key.columns.get(archetype) {
     Some(Some(column)) => column.get(row)
     _ => None
@@ -256,6 +257,7 @@ pub fn[A, B] Query2::for_each(
   f : (Entity, A, B) -> Unit,
 ) -> Unit {
   self.refresh()
+  self.world.active_queries += 1
   for archetype in self.matches {
     let entities = self.world.archetypes[archetype].entities
     let a = self.a.column(archetype)
@@ -264,6 +266,7 @@ pub fn[A, B] Query2::for_each(
       f(entities[row], a[row], b[row])
     }
   }
+  self.world.active_queries -= 1
 }
 
 ///|
@@ -272,6 +275,7 @@ pub fn[A, B] Query2::for_each_mut_a(
   f : (Entity, A, B) -> A,
 ) -> Unit {
   self.refresh()
+  self.world.active_queries += 1
   for archetype in self.matches {
     let entities = self.world.archetypes[archetype].entities
     let a = self.a.column(archetype)
@@ -280,6 +284,7 @@ pub fn[A, B] Query2::for_each_mut_a(
       a[row] = f(entities[row], a[row], b[row])
     }
   }
+  self.world.active_queries -= 1
 }
 
 ///|
@@ -288,6 +293,7 @@ pub fn[A, B] Query2::for_each_batch(
   f : (ArrayView[Entity], ArrayView[A], ArrayView[B]) -> Unit,
 ) -> Unit {
   self.refresh()
+  self.world.active_queries += 1
   for archetype in self.matches {
     f(
       self.world.archetypes[archetype].entities[:],
@@ -295,6 +301,7 @@ pub fn[A, B] Query2::for_each_batch(
       self.b.column(archetype)[:],
     )
   }
+  self.world.active_queries -= 1
 }
 
 ///|
@@ -303,6 +310,7 @@ pub fn[A, B] Query2::for_each_batch_mut_a(
   f : (ArrayView[Entity], MutArrayView[A], ArrayView[B]) -> Unit,
 ) -> Unit {
   self.refresh()
+  self.world.active_queries += 1
   for archetype in self.matches {
     f(
       self.world.archetypes[archetype].entities[:],
@@ -310,4 +318,5 @@ pub fn[A, B] Query2::for_each_batch_mut_a(
       self.b.column(archetype)[:],
     )
   }
+  self.world.active_queries -= 1
 }
