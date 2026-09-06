@@ -76,24 +76,30 @@ test "panic spawn rejects a component key from another world" {
 }
 
 ///|
-test "component sets grow beyond one machine word" {
+test "bitmask distinguishes archetypes across all 64 component ids" {
   let world = @reference.World::new()
   let keys : Array[@reference.ComponentKey[Int]] = []
-  for _ in 0..<2 {
+  for _ in 0..<64 {
     keys.push(world.component())
   }
   ignore(world.spawn((keys[0].entry(1), keys[1].entry(2))))
-  for _ in 2..<65 {
-    keys.push(world.component())
-  }
   ignore(world.spawn((keys[0].entry(3), keys[1].entry(4))))
-  ignore(world.spawn((keys[0].entry(10), keys[64].entry(20))))
+  ignore(world.spawn((keys[0].entry(10), keys[63].entry(20))))
   let old_archetype_count = Ref(0)
   world
   .query2(keys[0], keys[1])
   .for_each(fn(_, _, _) { old_archetype_count.val += 1 })
   assert_eq(old_archetype_count.val, 2)
   let total = Ref(0)
-  world.query2(keys[0], keys[64]).for_each(fn(_, a, b) { total.val += a + b })
+  world.query2(keys[0], keys[63]).for_each(fn(_, a, b) { total.val += a + b })
   assert_eq(total.val, 30)
+}
+
+///|
+test "panic a world rejects a 65th component type" {
+  let world = @reference.World::new()
+  for _ in 0..<64 {
+    let _ : @reference.ComponentKey[Int] = world.component()
+  }
+  let _ : @reference.ComponentKey[Int] = world.component()
 }

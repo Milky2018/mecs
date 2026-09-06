@@ -1,6 +1,12 @@
 ///|
 /// A process-local identity allocated monotonically for each world.
-priv struct WorldId(UInt64) derive(Eq, Debug)
+struct WorldId(UInt64) derive(Eq, Debug)
+
+///|
+pub extend WorldId with Eq::{equal, not_equal}
+
+///|
+pub extend WorldId with @debug.Debug::{to_repr}
 
 ///|
 let next_world_id : Ref[UInt64] = Ref(0UL)
@@ -14,7 +20,7 @@ fn allocate_world_id() -> WorldId {
 
 ///|
 priv struct Archetype {
-  components : ComponentSet
+  components : Bitmask
   entities : Array[Entity]
   remove_components : (Int) -> Unit
 }
@@ -36,14 +42,17 @@ struct ComponentEntry[T] {
 
 ///|
 pub trait Bundle {
-  fn collect(Self, ComponentCollector) -> Unit
+  fn bitmask(Self, WorldId) -> Bitmask
   fn prepare(Self, Int) -> (Int) -> Unit
   fn append(Self, Int) -> Unit
 }
 
 ///|
-pub impl[T] Bundle for ComponentEntry[T] with fn collect(self, collector) {
-  collector.insert(self.key.id, self.key.world_id)
+pub impl[T] Bundle for ComponentEntry[T] with fn bitmask(self, world_id) {
+  guard self.key.world_id == world_id else {
+    abort("component key belongs to another world")
+  }
+  Bitmask::single(self.key.id)
 }
 
 ///|
@@ -59,15 +68,17 @@ pub impl[T] Bundle for ComponentEntry[T] with fn append(self, archetype) {
 }
 
 ///|
-pub extend ComponentEntry with Bundle::{append, collect, prepare}
+pub extend ComponentEntry with Bundle::{append, bitmask, prepare}
 
 ///|
-pub impl[L : Bundle, R : Bundle] Bundle for (L, R) with fn collect(
+pub impl[L : Bundle, R : Bundle] Bundle for (L, R) with fn bitmask(
   self,
-  collector,
+  world_id,
 ) {
-  self.0.collect(collector)
-  self.1.collect(collector)
+  let left = self.0.bitmask(world_id)
+  let right = self.1.bitmask(world_id)
+  guard !left.overlaps(right) else { abort("duplicate component in bundle") }
+  left.union(right)
 }
 
 ///|
@@ -100,8 +111,7 @@ struct World {
   free_slots : Array[Int]
   mut active_queries : Int
   archetypes : Array[Archetype]
-  archetype_index : @hashmap.HashMap[UInt64, Array[Int]]
-  component_collector : ComponentCollector
+  archetype_index : @hashmap.HashMap[UInt64, Int]
 }
 
 ///|
@@ -115,18 +125,17 @@ pub fn World::new() -> World {
     active_queries: 0,
     archetypes: [],
     archetype_index: HashMap([]),
-    component_collector: { words: [], world_id, valid: true, },
   }
 }
 
 ///|
 /// Registers a world-local component key.
 pub fn[T] World::component(self : World) -> ComponentKey[T] {
+  guard self.next_component < 64 else {
+    abort("a world supports at most 64 component types")
+  }
   let id = self.next_component
   self.next_component += 1
-  if id / 64 == self.component_collector.words.length() {
-    self.component_collector.words.push(0UL)
-  }
   { id, world_id: self.id, columns: [], }
 }
 
@@ -157,29 +166,19 @@ fn[T] ComponentKey::column(self : ComponentKey[T], archetype : Int) -> Array[T] 
 }
 
 ///|
-fn[B : Bundle] World::archetype(self : World, hash : UInt64, bundle : B) -> Int {
-  match self.archetype_index.get(hash) {
-    Some(candidates) =>
-      for candidate in candidates {
-        if self.archetypes[candidate].components.equals_scratch(
-            self.component_collector.words,
-          ) {
-          return candidate
-        }
-      }
+fn[B : Bundle] World::archetype(
+  self : World,
+  mask : Bitmask,
+  bundle : B,
+) -> Int {
+  match self.archetype_index.get(mask.value()) {
+    Some(archetype) => return archetype
     None => ()
   }
   let id = self.archetypes.length()
   let remove_components = bundle.prepare(id)
-  self.archetypes.push({
-    components: ComponentSet::from_scratch(self.component_collector.words),
-    entities: [],
-    remove_components,
-  })
-  match self.archetype_index.get(hash) {
-    Some(candidates) => candidates.push(id)
-    None => self.archetype_index[hash] = [id]
-  }
+  self.archetypes.push({ components: mask, entities: [], remove_components, })
+  self.archetype_index[mask.value()] = id
   id
 }
 
@@ -188,15 +187,7 @@ fn[B : Bundle] World::archetype(self : World, hash : UInt64, bundle : B) -> Int 
 /// Panics if called inside a query callback on this world.
 pub fn[B : Bundle] World::spawn(self : World, bundle : B) -> Entity {
   guard self.active_queries == 0 else { abort("cannot spawn during a query") }
-  self.component_collector.reset()
-  bundle.collect(self.component_collector)
-  guard self.component_collector.valid else {
-    abort("invalid component bundle")
-  }
-  let archetype = self.archetype(
-    component_set_hash(self.component_collector.words),
-    bundle,
-  )
+  let archetype = self.archetype(bundle.bitmask(self.id), bundle)
   let row = self.archetypes[archetype].entities.length()
   let entity = self.allocate_entity(archetype, row)
   self.archetypes[archetype].entities.push(entity)
