@@ -1,6 +1,6 @@
 name = "Milky2018/mecs"
 
-version = "0.2.0"
+version = "0.2.1"
 
 readme = "README.mbt.md"
 
@@ -13,5 +13,5 @@ keywords = [ "ECS", "game" ]
 description = "A performance-first ECS experiment for MoonBit."
 
 import {
-  "moonbitlang/async@0.20.1",
+  "moonbitlang/async@0.21.2",
 }
